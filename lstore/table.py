@@ -30,7 +30,6 @@ class Table:
         self.total_columns = 4 + num_columns
         self.index = Index(self)
         db.tables.append(self)
-        pass
 
 
     def __merge(self):

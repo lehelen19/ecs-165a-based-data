@@ -26,7 +26,6 @@ class Database():
     # Deletes the specified table
     """
     def drop_table(self, name):
-        pass
         for i in range(len(self.tables)):
             if self.tables[i].name == name:
                 self.tables.remove[i]
@@ -36,7 +35,6 @@ class Database():
     # Returns table with the passed name
     """
     def get_table(self, name):
-        pass
         for i in self.tables:
             if i.name == name:
                 return i
