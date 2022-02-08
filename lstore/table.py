@@ -9,7 +9,7 @@ SCHEMA_ENCODING_COLUMN = 3
 
 class Record:
 
-    def __init__(self, rid, key, columns, data):
+    def __init__(self, rid, key, columns):
         self.rid = rid
         self.key = key
         self.columns = columns
@@ -24,7 +24,7 @@ class Table:
  
     def __init__(self, name, num_columns, key, db):
         self.name = name
-        self.key = key
+        self.key = key # indicates which column is the primary key
         self.num_columns = num_columns
         self.page_directory = {} #dictionary of page ranges and their corresponding pages
         self.total_columns = 4 + num_columns

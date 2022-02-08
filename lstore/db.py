@@ -3,9 +3,7 @@ from lstore.table import Table
 class Database():
 
     def __init__(self):
-        self.tables = []
         self.tables = [] #list of table instances
-        pass
 
     # Not required for milestone1
     def open(self, path):
@@ -32,7 +30,6 @@ class Database():
         for i in range(len(self.tables)):
             if self.tables[i].name == name:
                 self.tables.remove[i]
-                return
 
 
     """
