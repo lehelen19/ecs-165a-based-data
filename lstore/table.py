@@ -22,6 +22,8 @@ class Record:
         self.key = key
         self.columns = columns
         self.schema_encoding = schema_encoding
+        self.records = []
+        self.tailrecords = []
 
 class Table:
 
@@ -43,10 +45,13 @@ class Table:
 
 #return the rid of the record given key
     def key_get_RID(self, key):
+        for record in records:
+            if record[4] == key:
+                return(record(1))
+
+    def read_record(self,rid):
         pass
 
-    def rid_to_location(self, rid):
-        pass
 
 
     def __merge(self):

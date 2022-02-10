@@ -14,6 +14,8 @@ class Page:
             return False
         return True
 
+    def new_page(self):
+        pass
     def write(self, value):
         self.next += 8
         self.num_records += 1
