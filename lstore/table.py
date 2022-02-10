@@ -6,7 +6,6 @@ RID_COLUMN = 1
 TIMESTAMP_COLUMN = 2
 SCHEMA_ENCODING_COLUMN = 3
 
-
 class Record:
 
     def __init__(self, rid, key, columns):
@@ -29,8 +28,12 @@ class Table:
         self.page_directory = {} #dictionary of page ranges and their corresponding pages
         self.total_columns = 4 + num_columns
         self.index = Index(self)
+        self.num_records = 0
         db.tables.append(self)
-
+    
+    def create_rid(self, record):
+        record.rid = self.num_records
+        self.num_records += 1
 
     def __merge(self):
         print("merge is happening")

@@ -28,7 +28,7 @@ class Page_Range:
         We'll need the number of columns and the primary key column.
         """
         self.columns = []
-        self.index = index
+        self.index = index # identifier in table
         self.total_columns = Table.total_columns
         # Iterate through columns to get pages
         # Table.page_directory[self] = self.columns
@@ -44,3 +44,4 @@ class Column:
     def __init__(self, index):
         self.pages = []
         self.index = index
+        self.name = ""
