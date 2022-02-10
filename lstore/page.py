@@ -16,6 +16,7 @@ class Page:
 
     def new_page(self):
         pass
+        
     def write(self, value):
         self.next += 8
         self.num_records += 1
@@ -42,7 +43,7 @@ class Page_Range:
 
 
 class Column:
-    
+
     def __init__(self, index):
         self.pages = []
         self.index = index

@@ -32,14 +32,14 @@ class Query:
         # table.
         record = self.table.read_record(rid)
         # if the record is in base page or tail page
-        if record.column[0] == record.column[1]:
-            record.column[1] = '*'
-        elif (record.column[1] != record.column[0]): #if there are any updates check
-            tail_record = self.table.read_record(record.column[0])
-            while tail_record.column[1] != tail_record.column[0]:
-                tail_record.column[1] = '*'
-                tail_record = self.table.read_record(tail_record.column[0])
-            tail_record.column[1] = '*'
+        if record.columns[0] == record.columns[1]:
+            record.columns[1] = '*'
+        elif (record.columns[1] != record.columns[0]): #if there are any updates check
+            tail_record = self.table.read_record(record.columns[0])
+            while tail_record.columns[1] != tail_record.columns[0]:
+                tail_record.columns[1] = '*'
+                tail_record = self.table.read_record(tail_record.columns[0])
+            tail_record.columns[1] = '*'
         return True
 
 
@@ -130,7 +130,7 @@ class Query:
         self.rid = tailRID
         rid = key_get_RID(columns(0))
         record = read_record(rid)
-        record.column[0] = tailRID
+        record.columns[0] = tailRID
         schema_encoding = ''
         for i in range(len(list_columns)-1, -1, --):
             if list_columns != None:
@@ -156,6 +156,7 @@ class Query:
         tailRID += 1
         pass
 
+
     """
     :param start_range: int         # Start of the key range to aggregate
     :param end_range: int           # End of the key range to aggregate
@@ -167,6 +168,24 @@ class Query:
 
     def sum(self, start_range, end_range, aggregate_column_index):
         # read from base pages
+        if start_range < 0 or end_range < 0:
+            return False
+        if aggregate_column_index < 0 or aggregate_column_index > 0:
+            return False
+
+        column_sum = 0
+        founded_key = []
+        for record in tailrecords:
+            if start_range <= record[4] <= end_range:
+                column_sum += record[aggregate_column_index+4]
+                founded_key.append(record[4])
+
+        for record in tailrecords:
+            if start_range <= record[4] <= end_range:
+                if record[4] not in founded_key:
+                    column_sum += record[aggregate_column_index+4]
+
+        return column_sum
         pass
 
     """

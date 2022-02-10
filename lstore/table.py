@@ -42,10 +42,21 @@ class Table:
         self.index = Index(self)
         self.num_records = 0
         db.tables.append(self)
-    
+
     def create_rid(self, record):
         record.rid = self.num_records
         self.num_records += 1
+    #return the rid of the record given key
+
+    def key_get_RID(self, key):
+        for record in records:
+            if record[4] == key:
+                return(record(1))
+
+    def read_record(self,rid):
+        if Record.rid = rid
+            return Record
+
 
     def __merge(self):
         print("merge is happening")
