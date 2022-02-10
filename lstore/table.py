@@ -1,12 +1,12 @@
 from lstore.index import Index
-from time import time
+from datetime import datetime
 
 from lstore.page import Page_Range
 
-INDIRECTION_COLUMN = 0
-RID_COLUMN = 1
-TIMESTAMP_COLUMN = 2
-SCHEMA_ENCODING_COLUMN = 3
+INDIRECTION_COLUMN = 0 # int
+RID_COLUMN = 1 # int
+TIMESTAMP_COLUMN = 2 # int
+SCHEMA_ENCODING_COLUMN = 3 # string
 
 # passed in key value -> search for RID
 # afer we get RID we need the record that has the RID
@@ -14,18 +14,15 @@ SCHEMA_ENCODING_COLUMN = 3
 # while search for record with RID of record.column[0] is not empty(or not itself)
 # new record at rid .columns[1] = "*"
 
-
-
-
 class Record:
 
-    def __init__(self, rid, key, columns):
+    def __init__(self, rid, key, user_data, schema_encoding):
         self.rid = rid
         self.key = key
-        self.columns = columns
-        #self.schema_encoding = schema_encoding
-        self.records = []
-        self.tailrecords = []
+        timestamp = int(datetime.now().strftime("%d%m%Y%H%M%S"))
+        self.user_data = user_data
+        self.meta_data = [0, rid, timestamp, schema_encoding]
+        self.columns = self.meta_data + self.user_data
 
 class Table:
 
@@ -42,22 +39,25 @@ class Table:
 
     def __init__(self, name, num_columns, key, db):
         self.name = name
-        self.key = key # key associated with table in the database
+        self.key = key
         self.num_columns = num_columns
         self.total_columns = 4 + num_columns
-        self.page_directory = {} # dictionary of page ranges and their corresponding pages
+        self.page_directory = {}
         self.index = Index(self)
         self.num_records = 0
         self.page_ranges = [Page_Range(index=0, Table=self)]
-        db.tables.append(self) # I don't know if we need
 
     def create_rid(self):
         """
         Create a new RID for a given record based on
-        number of records in the table, then increments.
+        number of records in the table and
+        adds the RID-record mapping to the page directory.
         """
         rid = self.num_records
         self.num_records += 1
+        # self.page_directory[rid] = {"page_range":page_range_index,
+        #                             "column": column_index,
+        #                             "page": page_index}
         return rid
 
     #return the rid of the record given key
@@ -66,9 +66,29 @@ class Table:
             if record[4] == key:
                 return(record(1))
 
-    def read_record(self, rid):
-        pass
+    def write_record(self, rid, record):
+        write_location = self.page_directory[rid]
+        page_range = write_location.get("page_range")
+        column = write_location.get("column")
+        page = write_location.get("page")
+
+        # Writes record to the location based on RID
+        for i in range(len(record.columns)):
+            value = record.columns[i]
+            self.page_ranges[page_range].columns[page].write(value) # <- need to check
     
+    def read_record(self, rid, record):
+        read_location = self.page_directory.get(rid)
+        page_range = read_location.get("page_range")
+        column = read_location.get("column")
+        page = read_location.get("page")
+
+        next_page = self.page_ranges[page_range].columns[0].pages.read(page) # EDIT EDIT EDIT
+        pass
+
+    def update_record(self, rid, record):
+        pass
+
     def add_page_range(self):
         pass
 

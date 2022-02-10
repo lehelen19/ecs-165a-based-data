@@ -19,7 +19,7 @@ class Page:
             return False
         return True
 
-    def write(self, value):
+    def write(self, value): # Add based on entry row?
         self.next += 8
         self.num_records += 1
         self.data[self.next] = value.to_bytes(8, "big")
