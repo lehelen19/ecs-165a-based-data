@@ -1,9 +1,10 @@
 from lstore.table import Table, Record
 from lstore.index import Index
 
+
 class Query:
     """
-    # Creates a Query object that can perform different queries on the specified table 
+    # Creates a Query object that can perform different queries on the specified table
     Queries that fail must return False
     Queries that succeed should return the result or True
     Any query that crashes (due to exceptions) should return False
@@ -53,6 +54,10 @@ class Query:
     """
 
     def insert(self, *columns):
+        # insert into base page, for read only access later
+        list_columns = list(columns)
+        if len(list_columns) != table.num_columns:
+            return False
         schema_encoding = '0' * self.table.num_columns
         self.rid = globRID
         new_record = Record(key = columns[0], rid = globRID, schema_encoding = schema_encoding, columns = columns)
@@ -87,6 +92,30 @@ class Query:
     """
 
     def select(self, index_value, index_column, query_columns):
+        if len(query_columns) != self.table.num_columns:
+            return False
+        if index_column > self.table.num_columns or index_column < 0:
+            return False
+        for value in query_columns:
+            if value !=0 or value != 1:
+                return False
+        rid = table.key_get_RID(index_value)
+        if rid is None:
+            return False
+        record_list = []
+        record = read_record(rid)
+        for index, value in enumerate(query_columns):
+            if value = 1:
+                record_list.append[record.column[index+4]]
+            else:
+                record_list.append[None]
+        return record_list
+
+
+        # search for the base record with rid, we need to get the rid from the key
+        # get the record with updated version of the key
+        # return record
+
         pass
     """
     # Update a record with specified key and columns
@@ -103,11 +132,11 @@ class Query:
         record = read_record(rid)
         record.column[0] = tailRID
         schema_encoding = ''
-        for i in range(len(list_columns)):
+        for i in range(len(list_columns)-1, -1, --):
             if list_columns != None:
                 schema_encoding += '1'
             else:
-                schema_encoding += 0
+                schema_encoding += '0'
         new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
         self.tailrecords.append(new_record)
         indirection = rid
@@ -128,8 +157,8 @@ class Query:
         pass
 
     """
-    :param start_range: int         # Start of the key range to aggregate 
-    :param end_range: int           # End of the key range to aggregate 
+    :param start_range: int         # Start of the key range to aggregate
+    :param end_range: int           # End of the key range to aggregate
     :param aggregate_columns: int  # Index of desired column to aggregate
     # this function is only called on the primary key.
     # Returns the summation of the given range upon success
