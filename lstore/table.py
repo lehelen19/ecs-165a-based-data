@@ -1,6 +1,8 @@
 from lstore.index import Index
 from time import time
 
+from lstore.page import Page_Range
+
 INDIRECTION_COLUMN = 0
 RID_COLUMN = 1
 TIMESTAMP_COLUMN = 2
@@ -29,34 +31,46 @@ class Table:
 
     """
     :param name: string         #Table name
-    :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
+    :param num_columns: int     #Number of user columns in the table
+    :param total_columns: int   #Number of user + meta columns in table
+    :param page_directory: dict #Maps RID to corresponding record's physical location
+    :param index: Index         #Index object instance for table
+    :param num_records: int     #Number of records in table
+    :param page_ranges: list    #List of page ranges associated with table (initialized)
     """
 
     def __init__(self, name, num_columns, key, db):
         self.name = name
-        self.key = key # indicates which column is the primary key
+        self.key = key # key associated with table in the database
         self.num_columns = num_columns
-        self.page_directory = {} #dictionary of page ranges and their corresponding pages
         self.total_columns = 4 + num_columns
+        self.page_directory = {} # dictionary of page ranges and their corresponding pages
         self.index = Index(self)
         self.num_records = 0
-        db.tables.append(self)
+        self.page_ranges = [Page_Range(index=0, Table=self)]
+        db.tables.append(self) # I don't know if we need
 
-    def create_rid(self, record):
-        record.rid = self.num_records
+    def create_rid(self):
+        """
+        Create a new RID for a given record based on
+        number of records in the table, then increments.
+        """
+        rid = self.num_records
         self.num_records += 1
-    #return the rid of the record given key
+        return rid
 
+    #return the rid of the record given key
     def key_get_RID(self, key):
         for record in records:
             if record[4] == key:
                 return(record(1))
 
-    def read_record(self,rid):
-        if Record.rid = rid
-            return Record
-
+    def read_record(self, rid):
+        pass
+    
+    def add_page_range(self):
+        pass
 
     def __merge(self):
         print("merge is happening")
