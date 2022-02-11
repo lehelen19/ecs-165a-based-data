@@ -55,6 +55,7 @@ class Query:
 
     def insert(self, *columns):
         # insert into base page, for read only access later
+        # check curr_page.type == "base"
         list_columns = list(columns)
         if len(list_columns) != table.num_columns:
             return False
@@ -124,6 +125,8 @@ class Query:
     """
 
     def update(self, primary_key, *columns):
+        # check if curr_page.type == "tail"
+        # if not, column.add_page(index, _type="tail")
         list_columns = list(columns)
         if len(list_columns) != table.num_columns:
             return False

@@ -8,11 +8,12 @@ class Page:
     :param column: key          #Key denoting associated column
     """
 
-    def __init__(self, index):
+    def __init__(self, index, _type):
         self.num_records = 0
         self.data = bytearray(4096)
         self.index = index # based on number of columns
         self.next = 0
+        self.type = _type
 
     def has_capacity(self):
         if self.num_records >=512:
@@ -24,7 +25,7 @@ class Page:
         self.num_records += 1
         self.data[self.next] = value.to_bytes(8, "big")
     
-    def read(self, value):
+    def read(self, location):
         # Convert bytes into int
         pass
 
@@ -46,12 +47,16 @@ class Page_Range:
         # Table.page_directory[self] = self.columns
         for i in range(self.total_columns):
             column = Column(i)
-            # column.index = i
             self.columns.append(column)
 
 
 class Column:
 
     def __init__(self, index):
-        self.pages = [Page(index=0)]
+        self.pages = [Page(index=0, _type="base")]
         self.index = index # index of column where 0 = indirection, etc.
+        self.curr_page = self.pages[0]
+
+    def add_page(self, index, _type):
+        self.pages.append(Page(index, _type))
+        self.curr_page = self.pages[index]

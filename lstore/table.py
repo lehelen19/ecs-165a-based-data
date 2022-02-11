@@ -55,9 +55,11 @@ class Table:
         """
         rid = self.num_records
         self.num_records += 1
-        # self.page_directory[rid] = {"page_range":page_range_index,
+        # self.page_directory[rid] = {"page_range": page_range_index,
         #                             "column": column_index,
         #                             "page": page_index}
+        # rid -> page_range -> column -> page
+        # look at all columns? and retrieve multiple pages
         return rid
 
     #return the rid of the record given key
@@ -67,24 +69,22 @@ class Table:
                 return(record(1))
 
     def write_record(self, rid, record):
-        write_location = self.page_directory[rid]
-        page_range = write_location.get("page_range")
-        column = write_location.get("column")
-        page = write_location.get("page")
-
+        page_range = self.page_directory[rid].get("page_range") # page range index
         # Writes record to the location based on RID
         for i in range(len(record.columns)):
             value = record.columns[i]
-            self.page_ranges[page_range].columns[page].write(value) # <- need to check
+            # value = [0, rid, timestamp, schema_encoding, 01209, 124908, 129058...]
+            self.page_ranges[page_range].columns[i].curr_page.write(value) # <- need to check
+        return True
     
-    def read_record(self, rid, record):
-        read_location = self.page_directory.get(rid)
-        page_range = read_location.get("page_range")
-        column = read_location.get("column")
-        page = read_location.get("page")
-
-        next_page = self.page_ranges[page_range].columns[0].pages.read(page) # EDIT EDIT EDIT
-        pass
+    def read_record(self, rid):
+        """
+        Returns record information based on RID.
+        """
+        page_range = self.page_directory[rid].get("page_range")
+        # next_page = self.page_ranges[page_range].columns[0].pages.read() # EDIT EDIT EDIT
+        record = []
+        return record
 
     def update_record(self, rid, record):
         pass
