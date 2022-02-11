@@ -59,8 +59,6 @@ class Query:
         self.rid = self.table.create_rid()
         new_record = Record(key = cols[0], rid = self.rid, user_data = list_columns, schema_encoding = schema_encoding)
         self.table.write_record(self.rid, new_record)
-        # self.table.read_record(self.rid)
-        print()
 
     """
     # Read a record with specified key
@@ -72,15 +70,13 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
 
-
-    # broken
     def select(self, index_value, index_column, query_columns):
         if len(query_columns) != self.table.num_columns or index_column > self.table.num_columns or index_column < 0:
             return False
         # error checking
-        # for value in query_columns:
-        #     if value !=0 or value != 1:
-        #         return False
+        for value in query_columns:
+            if value !=0 or value != 1:
+                return False
 
         rid = self.table.key_get_RID(index_value)
         if rid is None:
@@ -94,20 +90,13 @@ class Query:
                 record_list.append[None]
         return record_list
 
-
-        # search for the base record with rid, we need to get the rid from the key
-        # get the record with updated version of the key
-        # return record
-
     """
     # Update a record with specified key and columns
     # Returns True if update is succesful
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
-
+    # flawed
     def update(self, primary_key, *columns):
-        # check if curr_page.type == "tail"
-        # if not, column.add_page(index, _type="tail")
         list_columns = list(columns)
         if len(list_columns) != table.num_columns:
             return False
@@ -116,12 +105,11 @@ class Query:
         record = read_record(rid)
         record.columns[0] = tailRID
         schema_encoding = ''
-        # Broken
-        # for i in range(len(list_columns)-1, -1, -):
-        #     if list_columns != None:
-        #         schema_encoding += '1'
-        #     else:
-        #         schema_encoding += '0'
+        for i in range(len(list_columns)-1, -1, -1):
+            if list_columns != None:
+                schema_encoding += '1'
+            else:
+                schema_encoding += '0'
         new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
         self.tailrecords.append(new_record)
         indirection = rid
@@ -137,8 +125,6 @@ class Query:
             return True
 
         return False
-        # update to tail pages
-        tailRID += 1
 
 
     """
