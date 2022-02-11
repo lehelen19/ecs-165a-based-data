@@ -87,9 +87,10 @@ class Table:
 
 
     def key_get_RID(self, key):
+        pass
 
-        for page in self.page_range:
-            for p in page.pages:
+    #     for page in self.page_range:
+    #         for p in page.pages:
 
 
         # search though the entire database and ge thte RID from the key
