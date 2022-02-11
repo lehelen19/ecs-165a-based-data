@@ -12,10 +12,6 @@ class Query:
 
     def __init__(self, table):
         self.table = table
-        pass
-
-    # globals rid, every inter += 1
-        self.globRID = num_records;
         self.tailRID = 64001
     """
     # internal Method
@@ -53,26 +49,29 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
 
-    def insert(self, *columns):
-        # insert into base page, for read only access later
-        # check curr_page.type == "base"
-        if curr_page._type != "base":
-            column.add_page(index, _type="base")
-        list_columns = list(columns)
-        if len(list_columns) != table.num_columns:
+    def insert(self, *cols):
+        list_columns = list(cols)
+        
+        if len(list_columns) != self.table.num_columns:
             return False
+
         schema_encoding = '0' * self.table.num_columns
-        self.rid = table.create_rid
-        new_record = Record(key = columns[0], rid = self.rid, schema_encoding = schema_encoding, columns = columns)
-        indirection = self.rid
-        Time = 0
-        all_columns = [indirection, globRID, Time, schema_encoding]
-        for i in range(list_columns):
-            all_columns.append(i)
-        if has_capacity:
-            for i in range(len(all_columns)):
-                value = list_columns[i]
-                self.write(value)
+        self.rid = self.table.create_rid()
+        new_record = Record(key = cols[0], rid = self.rid, user_data = list_columns, schema_encoding = schema_encoding)
+        self.table.write_record(self.rid, new_record)
+        print()
+        # print("finished")
+
+        # not writing to database os records are not updated, i.e. need to put record into the page 
+        # indirection = self.rid
+        # Time = 0
+        # all_columns = [indirection, globRID, Time, schema_encoding]
+        # for i in range(list_columns):
+        #     all_columns.append(i)
+        # if has_capacity:
+        #     for i in range(len(all_columns)):
+        #         value = list_columns[i]
+        #         self.write(value)
 
     """
     # Read a record with specified key
@@ -84,32 +83,33 @@ class Query:
     # Assume that select will never be called on a key that doesn't exist
     """
 
-    def select(self, index_value, index_column, query_columns):
-        if len(query_columns) != self.table.num_columns:
-            return False
-        if index_column > self.table.num_columns or index_column < 0:
-            return False
-        for value in query_columns:
-            if value !=0 or value != 1:
-                return False
-        rid = table.key_get_RID(index_value)
-        if rid is None:
-            return False
-        record_list = []
-        record = read_record(rid)
-        for index, value in enumerate(query_columns):
-            if value = 1:
-                record_list.append[record.column[index+4]]
-            else:
-                record_list.append[None]
-        return record_list
+
+    # broken
+    # def select(self, index_value, index_column, query_columns):
+    #     if len(query_columns) != self.table.num_columns:
+    #         return False
+    #     if index_column > self.table.num_columns or index_column < 0:
+    #         return False
+    #     for value in query_columns:
+    #         if value !=0 or value != 1:
+    #             return False
+    #     rid = table.key_get_RID(index_value)
+    #     if rid is None:
+    #         return False
+    #     record_list = []
+    #     record = read_record(rid)
+    #     for index, value in enumerate(query_columns):
+    #         if value = 1:
+    #             record_list.append[record.column[index+4]]
+    #         else:
+    #             record_list.append[None]
+    #     return record_list
 
 
         # search for the base record with rid, we need to get the rid from the key
         # get the record with updated version of the key
         # return record
 
-        pass
     """
     # Update a record with specified key and columns
     # Returns True if update is succesful
@@ -127,11 +127,12 @@ class Query:
         record = read_record(rid)
         record.columns[0] = tailRID
         schema_encoding = ''
-        for i in range(len(list_columns)-1, -1, --):
-            if list_columns != None:
-                schema_encoding += '1'
-            else:
-                schema_encoding += '0'
+        # Broken
+        # for i in range(len(list_columns)-1, -1, -):
+        #     if list_columns != None:
+        #         schema_encoding += '1'
+        #     else:
+        #         schema_encoding += '0'
         new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
         self.tailrecords.append(new_record)
         indirection = rid
@@ -149,7 +150,6 @@ class Query:
         return False
         # update to tail pages
         tailRID += 1
-        pass
 
 
     """
@@ -181,7 +181,6 @@ class Query:
                     column_sum += record[aggregate_column_index+4]
 
         return column_sum
-        pass
 
     """
     incremenets one column of the record

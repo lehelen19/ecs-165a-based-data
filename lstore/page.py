@@ -19,10 +19,21 @@ class Page:
             return False
         return True
 
+
     def write(self, value): # Add based on entry row?
+        # print("value", value)
+        # print(type(value.to_bytes(8, byteorder="big")))
+        # print(type(self.data[self.next]))
+        # print(type(self.next))
+        if type(value) == int:
+            self.data[self.next: self.next+8] = value.to_bytes(8, byteorder="big") 
+        elif type(value) == str:
+            self.data[self.next: self.next+8] = bytearray(value,"ascii")
+        # print(self.data[self.next: self.next+8], end = ", ")
         self.next += 8
         self.num_records += 1
-        self.data[self.next] = value.to_bytes(8, "big")
+        return True 
+
     
     def read(self, location):
         # Convert bytes into int
