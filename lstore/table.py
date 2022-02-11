@@ -12,15 +12,10 @@ class Record:
     def __init__(self, rid, key, columns):
         self.rid = rid
         self.key = key
-<<<<<<< Updated upstream
-        self.columns = columns
-=======
         timestamp = int(datetime.now().strftime("%d%m%Y%H%M%S"))
         self.user_data = user_data
         self.meta_data = [rid, rid, timestamp, schema_encoding]
         self.columns = self.meta_data + self.user_data
->>>>>>> Stashed changes
-
 
 class Table:
 
@@ -37,10 +32,6 @@ class Table:
         self.page_directory = {} #dictionary of page ranges and their corresponding pages
         self.total_columns = 4 + num_columns
         self.index = Index(self)
-<<<<<<< Updated upstream
-        db.tables.append(self)
-
-=======
         self.num_records = 0
         self.page_ranges = [Page_Range(index=0, Table=self)]
 
@@ -127,7 +118,6 @@ class Table:
 
     def add_page_range(self):
         pass
->>>>>>> Stashed changes
 
     def __merge(self):
         print("merge is happening")

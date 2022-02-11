@@ -14,12 +14,7 @@ class Page:
             return False
         return True
 
-<<<<<<< Updated upstream
-    def write(self, value):
-        self.next += 8
-        self.num_records += 1
-        self.data[self.next] = value.to_bytes(8, "big")
-=======
+
     def write(self, value): # Add based on entry row?
         # print("value", value)
         # print(type(value.to_bytes(8, byteorder="big")))
@@ -42,7 +37,7 @@ class Page:
     def read(self, location):
         # Convert bytes into int
         pass
->>>>>>> Stashed changes
+        
 
 class Page_Range:
 

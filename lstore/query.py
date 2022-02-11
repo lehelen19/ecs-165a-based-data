@@ -12,12 +12,7 @@ class Query:
 
     def __init__(self, table):
         self.table = table
-<<<<<<< Updated upstream
-        pass
-
-=======
         self.tailRID = 64001
->>>>>>> Stashed changes
     """
     # internal Method
     # Read a record with specified RID
@@ -33,11 +28,6 @@ class Query:
     # Returns False if insert fails for whatever reason
     """
 
-<<<<<<< Updated upstream
-    def insert(self, *columns):
-        schema_encoding = '0' * self.table.num_columns
-        pass
-=======
     def insert(self, *cols):
         list_columns = list(cols)
         
@@ -61,7 +51,7 @@ class Query:
         #     for i in range(len(all_columns)):
         #         value = list_columns[i]
         #         self.write(value)
->>>>>>> Stashed changes
+
 
     """
     # Read a record with specified key
@@ -72,11 +62,7 @@ class Query:
     # Returns False if record locked by TPL
     # Assume that select will never be called on a key that doesn't exist
     """
-<<<<<<< Updated upstream
 
-    def select(self, index_value, index_column, query_columns):
-        pass
-=======
     # broken
     # def select(self, index_value, index_column, query_columns):
     #     if len(query_columns) != self.table.num_columns:
@@ -102,17 +88,12 @@ class Query:
         # search for the base record with rid, we need to get the rid from the key
         # get the record with updated version of the key
         # return record
->>>>>>> Stashed changes
     """
     # Update a record with specified key and columns
     # Returns True if update is succesful
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
 
-    def update(self, primary_key, *columns):
-<<<<<<< Updated upstream
-        pass
-=======
         # check if curr_page.type == "tail"
         # if not, column.add_page(index, _type="tail")
         list_columns = list(columns)
@@ -146,7 +127,6 @@ class Query:
         return False
         # update to tail pages
         tailRID += 1
->>>>>>> Stashed changes
 
     """
     :param start_range: int         # Start of the key range to aggregate 
@@ -158,9 +138,6 @@ class Query:
     """
 
     def sum(self, start_range, end_range, aggregate_column_index):
-<<<<<<< Updated upstream
-        pass
-=======
         # read from base pages
         if start_range < 0 or end_range < 0:
             return False
@@ -180,7 +157,6 @@ class Query:
                     column_sum += record[aggregate_column_index+4]
 
         return column_sum
->>>>>>> Stashed changes
 
     """
     incremenets one column of the record
