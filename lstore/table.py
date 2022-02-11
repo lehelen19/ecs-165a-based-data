@@ -1,8 +1,8 @@
 from lstore.index import Index
 from lstore.index import Index
 from datetime import datetime
-
 from lstore.page import Page_Range
+
 
 INDIRECTION_COLUMN = 0 # int
 RID_COLUMN = 1 # int
@@ -79,10 +79,21 @@ class Table:
             self.page_ranges[page_range].columns[i].curr_page.write(value) # <- need to check
         return True
 
+
+    def write_record(self, rid, record):
+        page_range = self.page_directory[rid].get("page_range") # page range index
+        # Writes record to the location based on RID
+        for i in range(len(record.columns)):
+            value = record.columns[i]
+            # value = [0, rid, timestamp, schema_encoding, 01209, 124908, 129058...]
+            self.page_ranges[page_range].columns[i].curr_page.write(value) # <- need to check
+        return True
+    
     def read_record(self, rid):
         """
         Returns record information based on RID.
         """
+
 
         record_info = self.page_directory.get(rid)
         pageRange = record_info.get("page_range")

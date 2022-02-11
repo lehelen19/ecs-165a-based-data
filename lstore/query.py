@@ -58,7 +58,6 @@ class Query:
         # check curr_page.type == "base"
         if curr_page._type != "base":
             column.add_page(index, _type="base")
-
         list_columns = list(columns)
         if len(list_columns) != table.num_columns:
             return False
