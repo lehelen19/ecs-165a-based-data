@@ -30,9 +30,24 @@ for i in range(0, number_of_records):
         key = 92106429 + randint(0, number_of_records)
 
     records[key] = [key, randint(0, 20), randint(0, 20), randint(0, 20), randint(0, 20)]
+    # # runs fine up to here
+
     query.insert(*records[key])
     # print('inserted', records[key])
+
 print("Insert finished")
+print(db.tables)
+print(query.table.num_columns, "HELLO")
+print(query.table.name, "name")
+print(query.table.key, "key")
+print(query.table.num_columns, "num col")
+print(query.table.total_columns, "total col")
+print(query.table.page_directory, "page directory")
+print(query.table.index, "index")
+print(query.table.num_records, "num records")
+print(query.table.page_ranges, "rage")
+# print()
+print()
 
 # Check inserted records using select query
 for key in records:
