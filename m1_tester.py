@@ -33,6 +33,7 @@ for i in range(0, number_of_records):
     # # runs fine up to here
 
     query.insert(*records[key])
+    break;
     # print('inserted', records[key])
 
 print("Insert finished")

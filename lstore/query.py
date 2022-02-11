@@ -59,19 +59,8 @@ class Query:
         self.rid = self.table.create_rid()
         new_record = Record(key = cols[0], rid = self.rid, user_data = list_columns, schema_encoding = schema_encoding)
         self.table.write_record(self.rid, new_record)
+        # self.table.read_record(self.rid)
         print()
-        # print("finished")
-
-        # not writing to database os records are not updated, i.e. need to put record into the page 
-        # indirection = self.rid
-        # Time = 0
-        # all_columns = [indirection, globRID, Time, schema_encoding]
-        # for i in range(list_columns):
-        #     all_columns.append(i)
-        # if has_capacity:
-        #     for i in range(len(all_columns)):
-        #         value = list_columns[i]
-        #         self.write(value)
 
     """
     # Read a record with specified key
@@ -85,25 +74,25 @@ class Query:
 
 
     # broken
-    # def select(self, index_value, index_column, query_columns):
-    #     if len(query_columns) != self.table.num_columns:
-    #         return False
-    #     if index_column > self.table.num_columns or index_column < 0:
-    #         return False
-    #     for value in query_columns:
-    #         if value !=0 or value != 1:
-    #             return False
-    #     rid = table.key_get_RID(index_value)
-    #     if rid is None:
-    #         return False
-    #     record_list = []
-    #     record = read_record(rid)
-    #     for index, value in enumerate(query_columns):
-    #         if value = 1:
-    #             record_list.append[record.column[index+4]]
-    #         else:
-    #             record_list.append[None]
-    #     return record_list
+    def select(self, index_value, index_column, query_columns):
+        if len(query_columns) != self.table.num_columns or index_column > self.table.num_columns or index_column < 0:
+            return False
+        # error checking
+        # for value in query_columns:
+        #     if value !=0 or value != 1:
+        #         return False
+
+        rid = self.table.key_get_RID(index_value)
+        if rid is None:
+            return False
+        record_list = []
+        record = read_record(rid)
+        for index, value in enumerate(query_columns):
+            if value == 1:
+                record_list.append[record.column[index+4]]
+            else:
+                record_list.append[None]
+        return record_list
 
 
         # search for the base record with rid, we need to get the rid from the key
