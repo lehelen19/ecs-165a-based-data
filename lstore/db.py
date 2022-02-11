@@ -18,8 +18,8 @@ class Database():
     :param num_columns: int     #Number of Columns: all columns are integer
     :param key: int             #Index of table key in columns
     """
-    def create_table(self, name, num_columns, key_index):
-        table = Table(name, num_columns, key_index)
+    def create_table(self, name, key_index, num_columns):
+        table = Table(name, key_index, num_columns)
         self.tables.append(table)
         return table
 

@@ -1,3 +1,4 @@
+from sqlalchemy import column
 from lstore.index import Index
 from datetime import datetime
 
@@ -89,8 +90,8 @@ class Table:
     def update_record(self, rid, record):
         pass
 
-    def add_page_range(self):
-        pass
+    def add_page_range(self, index):
+        self.page_ranges.append(Page_Range(index, self))
 
     def __merge(self):
         print("merge is happening")
