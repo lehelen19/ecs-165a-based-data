@@ -4,7 +4,7 @@ from lstore.index import Index
 
 class Query:
     """
-    # Creates a Query object that can perform different queries on the specified table 
+    # Creates a Query object that can perform different queries on the specified table
     Queries that fail must return False
     Queries that succeed should return the result or True
     Any query that crashes (due to exceptions) should return False
@@ -21,7 +21,28 @@ class Query:
     """
 
     def delete(self, primary_key):
-        pass
+        rid = table.key_get_RID(primary_key)
+        if rid is None:
+            return False
+        # table.
+        record = self.table.read_record(rid)
+        # if the record is in base page or tail page
+        if record.column[0] == record.rid:
+
+            record.columns[1] = '*'
+        elif (record.columns[1] != record.columns[0]): #if there are any updates check
+            tail_record = self.table.read_record(record.columns[0])
+            while tail_record.columns[1] != tail_record.columns[0]:
+                tail_record.columns[1] = '*'
+                tail_record = self.table.read_record(tail_record.columns[0])
+            tail_record.columns[1] = '*'
+        return True
+
+
+
+
+
+
     """
     # Insert a record with specified columns
     # Return True upon succesful insertion
@@ -52,7 +73,6 @@ class Query:
         #         value = list_columns[i]
         #         self.write(value)
 
-
     """
     # Read a record with specified key
     # :param index_value: the value of index you want to search
@@ -62,6 +82,7 @@ class Query:
     # Returns False if record locked by TPL
     # Assume that select will never be called on a key that doesn't exist
     """
+
 
     # broken
     # def select(self, index_value, index_column, query_columns):
@@ -88,12 +109,14 @@ class Query:
         # search for the base record with rid, we need to get the rid from the key
         # get the record with updated version of the key
         # return record
+
     """
     # Update a record with specified key and columns
     # Returns True if update is succesful
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
 
+    def update(self, primary_key, *columns):
         # check if curr_page.type == "tail"
         # if not, column.add_page(index, _type="tail")
         list_columns = list(columns)
@@ -128,9 +151,10 @@ class Query:
         # update to tail pages
         tailRID += 1
 
+
     """
-    :param start_range: int         # Start of the key range to aggregate 
-    :param end_range: int           # End of the key range to aggregate 
+    :param start_range: int         # Start of the key range to aggregate
+    :param end_range: int           # End of the key range to aggregate
     :param aggregate_columns: int  # Index of desired column to aggregate
     # this function is only called on the primary key.
     # Returns the summation of the given range upon success
