@@ -1,4 +1,3 @@
-
 class Page:
 
     """
@@ -20,14 +19,20 @@ class Page:
             return False
         return True
 
-    def write(self, value): # Add based on entry row?
+
+    def write(self, value): 
+        if type(value) == int:
+            self.data[self.next: self.next+8] = value.to_bytes(8, byteorder="big") 
+        elif type(value) == str:
+            self.data[self.next: self.next+8] = bytearray(value,"ascii")
         self.next += 8
         self.num_records += 1
-        self.data[self.next] = value.to_bytes(8, "big")
+        return True 
+
     
     def read(self, location):
-        # Convert bytes into int
-        pass
+        return int.from_bytes(bytes = self.data[self.location: self.location+8], byteorder = "big")
+        
 
 class Page_Range:
 
@@ -59,4 +64,5 @@ class Column:
 
     def add_page(self, index, _type):
         self.pages.append(Page(index, _type))
+        self.curr_page = self.pages[index]
         self.curr_page = self.pages[index]
