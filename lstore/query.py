@@ -25,14 +25,14 @@ class Query:
     """
 
     def delete(self, primary_key):
-        pass
         rid = table.key_get_RID(primary_key)
         if rid is None:
             return False
         # table.
         record = self.table.read_record(rid)
         # if the record is in base page or tail page
-        if record.columns[0] == record.columns[1]:
+        if record.column[0] == record.rid:
+
             record.columns[1] = '*'
         elif (record.columns[1] != record.columns[0]): #if there are any updates check
             tail_record = self.table.read_record(record.columns[0])
@@ -56,14 +56,15 @@ class Query:
     def insert(self, *columns):
         # insert into base page, for read only access later
         # check curr_page.type == "base"
+        if curr_page._type != "base":
+            column.add_page(index, _type="base")
         list_columns = list(columns)
         if len(list_columns) != table.num_columns:
             return False
         schema_encoding = '0' * self.table.num_columns
-        self.rid = globRID
-        new_record = Record(key = columns[0], rid = globRID, schema_encoding = schema_encoding, columns = columns)
-        self.records.append(new_record)
-        indirection = globRID
+        self.rid = table.create_rid
+        new_record = Record(key = columns[0], rid = self.rid, schema_encoding = schema_encoding, columns = columns)
+        indirection = self.rid
         Time = 0
         all_columns = [indirection, globRID, Time, schema_encoding]
         for i in range(list_columns):
@@ -72,15 +73,6 @@ class Query:
             for i in range(len(all_columns)):
                 value = list_columns[i]
                 self.write(value)
-        else:
-            return new_page
-
-            return True
-
-        return False
-
-        globRID += 1
-        pass
 
     """
     # Read a record with specified key

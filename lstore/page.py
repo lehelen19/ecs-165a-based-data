@@ -1,4 +1,3 @@
-
 class Page:
 
     """
@@ -25,6 +24,10 @@ class Page:
         self.num_records += 1
         self.data[self.next] = value.to_bytes(8, "big")
     
+    def read(self, location):
+        # Convert bytes into int
+        pass
+
     def read(self, location):
         # Convert bytes into int
         pass
@@ -59,4 +62,5 @@ class Column:
 
     def add_page(self, index, _type):
         self.pages.append(Page(index, _type))
+        self.curr_page = self.pages[index]
         self.curr_page = self.pages[index]
