@@ -87,7 +87,7 @@ class Table:
 
 
     def key_get_RID(self, key):
-        pass
+    	
 
     #     for page in self.page_range:
     #         for p in page.pages:

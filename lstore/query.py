@@ -20,23 +20,23 @@ class Query:
     # Return False if record doesn't exist or is locked due to 2PL
     """
 
-    def delete(self, primary_key):
-        rid = table.key_get_RID(primary_key)
-        if rid is None:
-            return False
-        # table.
-        record = self.table.read_record(rid)
-        # if the record is in base page or tail page
-        if record.column[0] == record.rid:
+    # def delete(self, primary_key):
+    #     rid = table.key_get_RID(primary_key)
+    #     if rid is None:
+    #         return False
+    #     # table.
+    #     record = self.table.read_record(rid)
+    #     # if the record is in base page or tail page
+    #     if record.column[0] == record.rid:
 
-            record.columns[1] = '*'
-        elif (record.columns[1] != record.columns[0]): #if there are any updates check
-            tail_record = self.table.read_record(record.columns[0])
-            while tail_record.columns[1] != tail_record.columns[0]:
-                tail_record.columns[1] = '*'
-                tail_record = self.table.read_record(tail_record.columns[0])
-            tail_record.columns[1] = '*'
-        return True
+    #         record.columns[1] = '*'
+    #     elif (record.columns[1] != record.columns[0]): #if there are any updates check
+    #         tail_record = self.table.read_record(record.columns[0])
+    #         while tail_record.columns[1] != tail_record.columns[0]:
+    #             tail_record.columns[1] = '*'
+    #             tail_record = self.table.read_record(tail_record.columns[0])
+    #         tail_record.columns[1] = '*'
+    #     return True
 
 
 
@@ -71,18 +71,22 @@ class Query:
     """
 
     def select(self, index_value, index_column, query_columns):
-        if len(query_columns) != self.table.num_columns or index_column > self.table.num_columns or index_column < 0:
-            return False
-        # error checking
-        for value in query_columns:
-            if value !=0 or value != 1:
-                return False
-
+        # if len(query_columns) != self.table.num_columns or index_column > self.table.num_columns or index_column < 0:
+        #     return False
+        # # error checking
+        # for value in query_columns:
+        #     if value !=0 or value != 1:
+                # return False
+        
+        # get RID from key 
         rid = self.table.key_get_RID(index_value)
         if rid is None:
             return False
+
         record_list = []
+        # read the record from the RID
         record = read_record(rid)
+        # store updated values 
         for index, value in enumerate(query_columns):
             if value == 1:
                 record_list.append[record.column[index+4]]
@@ -95,36 +99,36 @@ class Query:
     # Returns True if update is succesful
     # Returns False if no records exist with given key or if the target record cannot be accessed due to 2PL locking
     """
-    # flawed
-    def update(self, primary_key, *columns):
-        list_columns = list(columns)
-        if len(list_columns) != table.num_columns:
-            return False
-        self.rid = tailRID
-        rid = key_get_RID(columns(0))
-        record = read_record(rid)
-        record.columns[0] = tailRID
-        schema_encoding = ''
-        for i in range(len(list_columns)-1, -1, -1):
-            if list_columns != None:
-                schema_encoding += '1'
-            else:
-                schema_encoding += '0'
-        new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
-        self.tailrecords.append(new_record)
-        indirection = rid
-        Time = 0
-        all_columns = [indirection, tailRID, Time, schema_encoding]
-        for i in range(list_columns):
-            all_columns.append(i)
-        if has_capacity:
-            for i in range(len(all_columns)):
-                value = list_columns[i]
-                self.write(value)
+    # # flawed
+    # def update(self, primary_key, *columns):
+    #     list_columns = list(columns)
+    #     if len(list_columns) != table.num_columns:
+    #         return False
+    #     self.rid = tailRID
+    #     rid = key_get_RID(columns(0))
+    #     record = read_record(rid)
+    #     record.columns[0] = tailRID
+    #     schema_encoding = ''
+    #     for i in range(len(list_columns)-1, -1, -1):
+    #         if list_columns != None:
+    #             schema_encoding += '1'
+    #         else:
+    #             schema_encoding += '0'
+    #     new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
+    #     self.tailrecords.append(new_record)
+    #     indirection = rid
+    #     Time = 0
+    #     all_columns = [indirection, tailRID, Time, schema_encoding]
+    #     for i in range(list_columns):
+    #         all_columns.append(i)
+    #     if has_capacity:
+    #         for i in range(len(all_columns)):
+    #             value = list_columns[i]
+    #             self.write(value)
 
-            return True
+    #         return True
 
-        return False
+    #     return False
 
 
     """
@@ -136,26 +140,26 @@ class Query:
     # Returns False if no record exists in the given range
     """
 
-    def sum(self, start_range, end_range, aggregate_column_index):
-        # read from base pages
-        if start_range < 0 or end_range < 0:
-            return False
-        if aggregate_column_index < 0 or aggregate_column_index > 0:
-            return False
+    # def sum(self, start_range, end_range, aggregate_column_index):
+    #     # read from base pages
+    #     if start_range < 0 or end_range < 0:
+    #         return False
+    #     if aggregate_column_index < 0 or aggregate_column_index > 0:
+    #         return False
 
-        column_sum = 0
-        founded_key = []
-        for record in tailrecords:
-            if start_range <= record[4] <= end_range:
-                column_sum += record[aggregate_column_index+4]
-                founded_key.append(record[4])
+    #     column_sum = 0
+    #     founded_key = []
+    #     for record in tailrecords:
+    #         if start_range <= record[4] <= end_range:
+    #             column_sum += record[aggregate_column_index+4]
+    #             founded_key.append(record[4])
 
-        for record in tailrecords:
-            if start_range <= record[4] <= end_range:
-                if record[4] not in founded_key:
-                    column_sum += record[aggregate_column_index+4]
+    #     for record in tailrecords:
+    #         if start_range <= record[4] <= end_range:
+    #             if record[4] not in founded_key:
+    #                 column_sum += record[aggregate_column_index+4]
 
-        return column_sum
+    #     return column_sum
 
     """
     incremenets one column of the record
@@ -166,11 +170,11 @@ class Query:
     # Returns False if no record matches key or if target record is locked by 2PL.
     """
 
-    def increment(self, key, column):
-        r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]
-        if r is not False:
-            updated_columns = [None] * self.table.num_columns
-            updated_columns[column] = r[column] + 1
-            u = self.update(key, *updated_columns)
-            return u
-        return False
+    # def increment(self, key, column):
+    #     r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]
+    #     if r is not False:
+    #         updated_columns = [None] * self.table.num_columns
+    #         updated_columns[column] = r[column] + 1
+    #         u = self.update(key, *updated_columns)
+    #         return u
+    #     return False

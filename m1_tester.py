@@ -31,9 +31,10 @@ for i in range(0, number_of_records):
 
     records[key] = [key, randint(0, 20), randint(0, 20), randint(0, 20), randint(0, 20)]
     # # runs fine up to here
+    print(records[key])
 
     query.insert(*records[key])
-    query.select(key,*records[key])
+    query.select(key,records[key])
     query.update(key,[1, 1, 1, 1, 1])
     query.select(key,[1, 1, 1, 1, 1])
 
