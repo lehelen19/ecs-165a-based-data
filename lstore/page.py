@@ -1,3 +1,16 @@
+class BasePage:
+
+    def __init__(self, index, total_columns):
+        self.pages = [Page(index=i, _type="base") for i in range(total_columns)]
+        self.index = index # index of column where 0 = indirection, etc.
+
+class TailPage:
+
+    def __init__(self, index, parent):
+        self.pages = [Page(index=0, _type="tail")]
+        self.index = index # index of column where 0 = indirection, etc.
+        self.parent = parent
+
 class Page:
 
     """
@@ -20,18 +33,19 @@ class Page:
         return True
 
 
-    def write(self, value): 
+    def write(self, value):
         if type(value) == int:
-            self.data[self.next: self.next+8] = value.to_bytes(8, byteorder="big") 
+            self.data[self.next: self.next+8] = value.to_bytes(8, byteorder="big")
         elif type(value) == str:
             self.data[self.next: self.next+8] = bytearray(value,"ascii")
         self.next += 8
         self.num_records += 1
-        return True 
+        return True
 
-    
+
     def read(self, location):
         return int.from_bytes(bytes = self.data[self.location: self.location+8], byteorder = "big")
+
 
 class Page_Range:
 
@@ -41,27 +55,21 @@ class Page_Range:
         This also keeps track of how the base pages are grouped, for example.
         We'll need the number of columns and the primary key column.
         """
-        self.columns = []
+        self.base_pages = [BasePage(index=0)]
+        self.tail_pages = []
         self.index = index # identifier in table
         self.num_columns = Table.num_columns
         self.total_columns = Table.total_columns
         self.table_key = Table.key
 
-        # Iterate through columns to get pages
-        # Table.page_directory[self] = self.columns
-        for i in range(self.total_columns):
-            column = Column(i)
-            self.columns.append(column)
+# class Column:
 
+#     def __init__(self, index):
+#         self.pages = [Page(index=0, _type="base")]
+#         self.index = index # index of column where 0 = indirection, etc.
+#         self.curr_page = self.pages[0]
 
-class Column:
-
-    def __init__(self, index):
-        self.pages = [Page(index=0, _type="base")]
-        self.index = index # index of column where 0 = indirection, etc.
-        self.curr_page = self.pages[0]
-
-    def add_page(self, index, _type):
-        self.pages.append(Page(index, _type))
-        self.curr_page = self.pages[index]
-        self.curr_page = self.pages[index]
+#     def add_page(self, index, _type):
+#         self.pages.append(Page(index, _type))
+#         self.curr_page = self.pages[index]
+#         self.curr_page = self.pages[index]
