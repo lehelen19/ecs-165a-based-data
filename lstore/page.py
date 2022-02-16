@@ -32,7 +32,6 @@ class Page:
     
     def read(self, location):
         return int.from_bytes(bytes = self.data[self.location: self.location+8], byteorder = "big")
-        
 
 class Page_Range:
 

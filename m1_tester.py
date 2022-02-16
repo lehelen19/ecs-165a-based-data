@@ -33,6 +33,10 @@ for i in range(0, number_of_records):
     # # runs fine up to here
 
     query.insert(*records[key])
+    query.select(key,*records[key])
+    query.update(key,[1, 1, 1, 1, 1])
+    query.select(key,[1, 1, 1, 1, 1])
+
     break;
     # print('inserted', records[key])
 
