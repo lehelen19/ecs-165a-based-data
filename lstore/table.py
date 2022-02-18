@@ -66,8 +66,7 @@ class Table:
         return page_directory
 
 
-    def create_rid(self):
-        # print("create RID ")
+    def createRid(self):
         """
         Create a new RID for a given record based on
         number of records in the table and
@@ -77,36 +76,27 @@ class Table:
         self.num_records += 1
         self.page_directory[rid] = self.rid_to_location(rid)
 
-        # rid -> page_range -> column -> page
-        # look at all columns? and retrieve multiple pages
-        # print("rid", rid)
         return rid
 
-
-
-    #return the rid of the record given key
-
-    # Invalid syntax
-    # def key_get_RID(self, key):
-    #     for i in range(len(record.columns[4])):
-    #         if record.columns[4][i] == key:
-    #             return record.columns[1][i]
+    def key_get_RID(self, key):
+        for page_range in self.page_ranges:
+            for base_page in page_range.base_pages:
+                for i in range(PAGE_ENTRIES):
+                    entry = base_page.pages[4].read(i)
+                    if entry == key:
+                        rid = base_page.pages[RID_COLUMN].read(i)
+                        if rid == "*":
+                            return False
+                        else:
+                            return rid
+        return False
 
 
     def write_record(self, rid, record):
-        # print()
-        # print("writing record")
-        # print()
-        # print("self.page_directory[rid]", self.page_directory[rid])
         page_range = self.page_directory[rid].get("page_range") # page range index
-        print(page_range, "page range")
-        print(record.columns, "record col")
-        # Writes record to the location based on RID
         for i in range(self.total_columns):
             value = record.columns[i]
-            # value = [0, rid, timestamp, schema_encoding, 01209, 124908, 129058...]
             print(self.page_ranges[page_range].base_pages[i].write(value)) # <- need to check
-
         return True
 
     def read_record(self, rid): # TODO: EDIT
@@ -127,55 +117,33 @@ class Table:
 
 
     def update_record(self, rid, record):
-        pass
+        record_info = self.page_directory.get(rid)
+        pageRange = record_info.get("page_range")
+        basePage = record_info.get("base_page")
+        pageIndex = record_info.get("page_index")
 
-    # def add_page_range(self):
-    #     pass
+        prevTID = self.page_ranges[pageRange].base_pages[basePage].pages[INDIRECTION_COLUMN].read(pageIndex)
+        newTID = self.page_ranges[pageRange].base_pages[basePage].createTID()
+        newTIDLocation = self.page_ranges[pageRange].base_pages[basePage].tail_page_directory.get(newTID)
 
-    #     record_info = self.page_directory.get(rid)
-    #     pageRange = record_info.get("page_range")
-    #     basePage = record_info.get("base_page")
-    #     pageIndex = record_info.get("page_index")
+        newTail = newTIDLocation.get("tail_index")
+        newPage = newTIDLocation.get("page_index")
 
-    #     total_entries = []
+        record.columns[INDIRECTION_COLUMN] = prevTID
+        record.columns[RID_COLUMN] = newTID
 
-    #     indirection_tid = self.book[pageRange].pages[basePage].columns_list[INDIRECTION_COLUMN].read(pageIndex)
+        for i in range(len(record.columns)):
+            val = record.columns[i]
+            self.page_ranges[pageRange].base_pages[basePage].tail[newTail].pages[i].write(column_values, newPage)
 
-    #     for col in range(self.total_columns):
-    #         entry = self.book[pageRange].pages[basePage].columns_list[col].read(pageIndex)
-    #         total_entries.append(entry)
-    #     key = total_entries[columns[0]]
-    #     schema_encode = total_entries[SCHEMA_ENCODING_COLUMN]
-    #     user_cols = total_entries[columns[0]: ]
-    #     if not schema_encode:
-    #         return Record(key= key, rid = rid, schema_encoding = schema_encode, column_values = user_cols)
-    #     else:
-    #         ind_dict = self.book[pageRange].pages[basePage].tail_page_directory.get(indirection_tid)
-    #         tail_page = ind_dict.get('tail_page')
-    #         tp_index = ind_dict.get('page_index')
-    #         column_update_indices = []
-    #         for i in range(columns[0], self.total_columns):
-    #             if get_bit(schema_encode, i - 4)
-    #                 column_update_indices.append(i)
-    #         for index in column_update_indices:
-    #             user_cols[index - 4] = self.book[pageRange].pages[basePage].tail_page_list[tail_page].columns_list[index].read(tp_index)
+        newSchema = record.columns[SCHEMA_ENCODING_COLUMN]
+        updateInd = self.page_ranges[pageRange].base_pages[basePage].pages[INDIRECTION_COLUMN].write(newTID, newPage)
+        updateSchema = self.page_ranges[pageRange].base_pages[basePage].pages[SCHEMA_ENCODING_COLUMN].write(newSchema, newPage)
 
-    #     return Record(key= key, rid = rid, schema_encoding = schema_encode, column_values = user_cols)
 
-        # page_range = self.page_directory[rid].get("page_range")
-        # # next_page = self.page_ranges[page_range].columns[0].pages.read() # EDIT EDIT EDIT
-        # record = []
-        # for i in range(len(record.columns[1])):
-        #     if record.columns[1][i]= rid:
-        #         for j in range(len(record.columns)):
-        #             record.append(record.columns[j][i])
-        # return record
-
-    def update_record(self, rid, record):
-        pass
 
     def add_page_range(self, index):
-        self.page_ranges.append(Page_Range(index, self))
+        self.page_ranges.append(Page_Range(len(self.page_ranges), self))
 
     def __merge(self):
         print("merge is happening")

@@ -1,15 +1,31 @@
 class BasePage:
+        self.pages = [Page(index=i, _type="base") for i in range(total_columns)] #eq to colmuns_list
+        self.tail = [TailPage(index = 0,  _type="tail", parent = index)] # eq to tail_page_list
+        self.tailDirectory = {} # eq to tail_page_directectory
+        self.pageRangeIndex = pageRangeIndex # eq to to pr_key
+        self.index = index # index of column where 0 = indirection, etc., eq to bp key
+        self.numTailRecords = 0
 
-    def __init__(self, index, total_columns):
-        self.pages = [Page(index=i, _type="base") for i in range(total_columns)]
-        self.index = index # index of column where 0 = indirection, etc.
+    def newTailPage(self):
+    	tailIndex = len(self.tail)
+    	newTail = TailPage(tailIndex, self.index)
+    	self.tail.append(newTail)
+
+    def createTID(self):
+    	TID = self.numTailRecords
+    	self.numTailRecords += 1
+    	tailIndex = TID // 512
+    	if tailIndex > len(self.tail)-1:
+    		self.newTailPage()
+    	self.tailDirectory[TID] = {"tail_index": tailIndex, "page_index" = TID % 512}
+    	return TID
 
 class TailPage:
 
     def __init__(self, index, parent):
-        self.pages = [Page(index=0, _type="tail")]
-        self.index = index # index of column where 0 = indirection, etc.
-        self.parent = parent
+        self.pages = [Page(index=i, _type="tail") for i in range(total_columns)] # eq to columns_list
+        self.index = index # index of column where 0 = indirection, etc., eq to key
+        self.parent = parent  #eq to bp_key
 
 class Page:
 
@@ -24,7 +40,6 @@ class Page:
         self.num_records = 0
         self.data = bytearray(4096)
         self.index = index # based on number of columns
-        self.next = 0
         self.type = _type
 
     def has_capacity(self):
@@ -33,18 +48,18 @@ class Page:
         return True
 
 
-    def write(self, value):
+    def write(self, value, location):
+    	start = self.location * 512
         if type(value) == int:
-            self.data[self.next: self.next+8] = value.to_bytes(8, byteorder="big")
+            self.data[start:start+8] = value.to_bytes(8, byteorder="big")
         elif type(value) == str:
-            self.data[self.next: self.next+8] = bytearray(value,"ascii")
-        self.next += 8
+            self.data[start:start+8] = bytearray(value,"ascii")
         self.num_records += 1
         return True
 
 
     def read(self, location):
-        return int.from_bytes(bytes = self.data[self.location: self.location+8], byteorder = "big")
+        return int.from_bytes(bytes = self.data[self.location*512: self.location*512+8], byteorder = "big")
 
 
 class Page_Range:

@@ -57,7 +57,7 @@ class Query:
             return False
 
         schema_encoding = '0' * self.table.num_columns
-        self.rid = self.table.create_rid()
+        self.rid = self.table.createRid()
         new_record = Record(key = cols[0], rid = self.rid, user_data = list_columns, schema_encoding = schema_encoding)
         self.table.write_record(self.rid, new_record)
 
@@ -98,21 +98,31 @@ class Query:
     """
     # flawed
     def update(self, primary_key, *columns):
-        list_columns = list(columns)
-        if len(list_columns) != table.num_columns:
-            return False
-        self.rid = tailRID
-        rid = key_get_RID(columns(0))
+        # list_columns = list(columns)
+        # if len(list_columns) != table.num_columns:
+        #     return False
+        # self.rid = tailRID
+
+        # rid = key_get_RID(columns(0))
+        rid = key_get_RID(primary_key) # base rid
         record = read_record(rid)
-        record.columns[0] = tailRID
+
+        # record.columns[0] = tailRID # need to set a new rid 
+
+        # need to check where ths 
+        #  create schema encoding
         schema_encoding = ''
         for i in range(len(list_columns)-1, -1, -1):
             if list_columns != None:
                 schema_encoding += '1'
             else:
                 schema_encoding += '0'
+        #  create new record with updated data, still need to get the RID sorted out 
         new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
+        # need to figure out what is happening here
         self.tailrecords.append(new_record)
+
+        # meta data columns 
         indirection = rid
         Time = 0
         all_columns = [indirection, tailRID, Time, schema_encoding]
@@ -121,9 +131,10 @@ class Query:
         if has_capacity:
             for i in range(len(all_columns)):
                 value = list_columns[i]
-                self.write(value)
+                self.table.write_record(value)
 
             return True
+        # need to update previous update's indirection column. 
 
         return False
 
@@ -138,7 +149,7 @@ class Query:
     """
 
     def sum(self, start_range, end_range, aggregate_column_index):
-        # read from base pages
+        # read from base pages, error checking
         if start_range < 0 or end_range < 0:
             return False
         if aggregate_column_index < 0 or aggregate_column_index > 0:
@@ -166,12 +177,12 @@ class Query:
     # Returns True is increment is successful
     # Returns False if no record matches key or if target record is locked by 2PL.
     """
-
+    # this is copied, need to chage. 
     def increment(self, key, column):
-        r = self.select(key, self.table.key, [1] * self.table.num_columns)[0]
-        if r is not False:
-            updated_columns = [None] * self.table.num_columns
-            updated_columns[column] = r[column] + 1
-            u = self.update(key, *updated_columns)
-            return u
-        return False
+        r = self.select(key, self.table.key, [1]*self.table.num_columns)[0]
+        if !r:
+            return False  
+        updated_columns = [None] * self.table.num_columns
+        updated_columns[column] = r[column] + 1
+        u = self.update(key, *updated_columns)
+        return u
