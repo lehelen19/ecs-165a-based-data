@@ -1,6 +1,6 @@
 from lstore.table import Table, Record
 from lstore.index import Index
-from lstore.page import Page, Page_Range, Column
+from lstore.page import Page, Page_Range, BasePage, TailPage
 
 
 class Query:
@@ -25,11 +25,9 @@ class Query:
         rid = table.key_get_RID(primary_key)
         if rid is None:
             return False
-        # table.
         record = self.table.read_record(rid)
-        # if the record is in base page or tail page
+        print(record)
         if record.column[0] == record.rid:
-
             record.columns[1] = '*'
         elif (record.columns[1] != record.columns[0]): #if there are any updates check
             tail_record = self.table.read_record(record.columns[0])
@@ -104,19 +102,24 @@ class Query:
         # self.rid = tailRID
 
         # rid = key_get_RID(columns(0))
-        rid = key_get_RID(primary_key) # base rid
-        record = read_record(rid)
+        rid = self.table.key_get_RID(primary_key) # base rid
+        print("rid", rid)
+        record = self.table.read_record(rid)
+        print("record",record)
+
+        # self.table.update_record(rid, record)
 
         # record.columns[0] = tailRID # need to set a new rid 
 
         # need to check where ths 
         #  create schema encoding
         schema_encoding = ''
-        for i in range(len(list_columns)-1, -1, -1):
+        for i in range(len(list_columns)):
             if list_columns != None:
                 schema_encoding += '1'
             else:
                 schema_encoding += '0'
+        print("econding after update",schema_encoding)
         #  create new record with updated data, still need to get the RID sorted out 
         new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
         # need to figure out what is happening here
@@ -180,7 +183,7 @@ class Query:
     # this is copied, need to chage. 
     def increment(self, key, column):
         r = self.select(key, self.table.key, [1]*self.table.num_columns)[0]
-        if !r:
+        if not r:
             return False  
         updated_columns = [None] * self.table.num_columns
         updated_columns[column] = r[column] + 1

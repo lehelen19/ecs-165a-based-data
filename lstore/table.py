@@ -1,4 +1,3 @@
-from sqlalchemy import column
 from lstore.index import Index
 from lstore.index import Index
 from datetime import datetime
@@ -41,7 +40,7 @@ class Table:
     :param page_ranges: list    #List of page ranges associated with table (initialized)
     """
 
-    def __init__(self, name, num_columns, key, db):
+    def __init__(self, name, num_columns, key):
         self.name = name
         self.key = key
         self.num_columns = num_columns
@@ -82,9 +81,9 @@ class Table:
         for page_range in self.page_ranges:
             for base_page in page_range.base_pages:
                 for i in range(PAGE_ENTRIES):
-                    entry = base_page.pages[4].read(i)
+                    entry = base_page.pages[4].read(i, int)
                     if entry == key:
-                        rid = base_page.pages[RID_COLUMN].read(i)
+                        rid = base_page.pages[RID_COLUMN].read(i, int)
                         if rid == "*":
                             return False
                         else:
@@ -94,9 +93,12 @@ class Table:
 
     def write_record(self, rid, record):
         page_range = self.page_directory[rid].get("page_range") # page range index
+        basePage = self.page_directory[rid].get("base_page")
+        pageIndex = self.page_directory[rid].get("page_index")
+
         for i in range(self.total_columns):
             value = record.columns[i]
-            print(self.page_ranges[page_range].base_pages[i].write(value)) # <- need to check
+            print(self.page_ranges[page_range].base_pages[basePage].pages[i].write(value, pageIndex)) # <- need to check
         return True
 
     def read_record(self, rid): # TODO: EDIT
@@ -106,14 +108,34 @@ class Table:
         entries = []
 
         for i in range(self.total_columns):
-            rec = self.page_ranges[page_range].pages[basePage].columns_list[i].read(pageIndex)
+            if i == SCHEMA_ENCODING_COLUMN:
+                rec = self.page_ranges[page_range].base_pages[basePage].pages[i].read(pageIndex, str)
+            else:
+                rec = self.page_ranges[page_range].base_pages[basePage].pages[i].read(pageIndex, int)
             entries.append(rec)
-
+        print(entries)
         key = entries[4]
         schema_encode = entries[SCHEMA_ENCODING_COLUMN]
-        columns = entries[self.columns]
+        print(schema_encode, "schema_encode")
+        columns = entries[4:]
+        indTID = self.page_ranges[page_range].base_pages[basePage].pages[INDIRECTION_COLUMN].read(pageIndex)
 
-        return Record(key= key, rid = rid, schema_encoding = schema_encode, column_values = columns)
+        if "1" not in schema_encode:
+            return Record(key= key, rid = rid, schema_encoding = schema_encode, column_values = columns)
+        else:
+            indDict = self.page_ranges[page_range].base_pages[basePage].tailDirectory.get(indTID)
+            tailPage = indDict.get("tail_page")
+            tailIndex = indDict.get("page_index")
+            updatedCols = []
+
+            for i in range(4, self.total_columns):
+                if get_bit(schema_encode, i-4):
+                    updatedCols.append(i)
+
+            for i in updatedCols:
+                columns[i-4] = self.page_ranges[page_range].base_pages[basePage].tail[tailPage].pages[i].read(tailIndex)
+
+        return Record(rid=rid, key=key, schema_encoding=schema_encode, user_data=columns)
 
 
     def update_record(self, rid, record):

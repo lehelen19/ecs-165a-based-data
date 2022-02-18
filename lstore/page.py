@@ -1,28 +1,30 @@
 class BasePage:
+
+    def __init__(self, index, total_columns, pageRangeIndex):
         self.pages = [Page(index=i, _type="base") for i in range(total_columns)] #eq to colmuns_list
-        self.tail = [TailPage(index = 0,  _type="tail", parent = index)] # eq to tail_page_list
+        self.tail = [TailPage(index = 0, parent = index, total_columns = total_columns)] # eq to tail_page_list
         self.tailDirectory = {} # eq to tail_page_directectory
         self.pageRangeIndex = pageRangeIndex # eq to to pr_key
         self.index = index # index of column where 0 = indirection, etc., eq to bp key
         self.numTailRecords = 0
 
     def newTailPage(self):
-    	tailIndex = len(self.tail)
-    	newTail = TailPage(tailIndex, self.index)
-    	self.tail.append(newTail)
+        tailIndex = len(self.tail)
+        newTail = TailPage(tailIndex, self.index)
+        self.tail.append(newTail)
 
     def createTID(self):
-    	TID = self.numTailRecords
-    	self.numTailRecords += 1
-    	tailIndex = TID // 512
-    	if tailIndex > len(self.tail)-1:
-    		self.newTailPage()
-    	self.tailDirectory[TID] = {"tail_index": tailIndex, "page_index" = TID % 512}
-    	return TID
+        TID = self.numTailRecords
+        self.numTailRecords += 1
+        tailIndex = TID // 512
+        if tailIndex > len(self.tail)-1:
+            self.newTailPage()
+        self.tailDirectory[TID] = {"tail_index": tailIndex, "page_index" : TID % 512}
+        return TID
 
 class TailPage:
 
-    def __init__(self, index, parent):
+    def __init__(self, index, parent, total_columns):
         self.pages = [Page(index=i, _type="tail") for i in range(total_columns)] # eq to columns_list
         self.index = index # index of column where 0 = indirection, etc., eq to key
         self.parent = parent  #eq to bp_key
@@ -49,18 +51,20 @@ class Page:
 
 
     def write(self, value, location):
-    	start = self.location * 512
+        start = location * 512
         if type(value) == int:
             self.data[start:start+8] = value.to_bytes(8, byteorder="big")
         elif type(value) == str:
             self.data[start:start+8] = bytearray(value,"ascii")
+            print(self.data[start:start+8], "self.data[start:start+8]")
         self.num_records += 1
         return True
 
 
-    def read(self, location):
-        return int.from_bytes(bytes = self.data[self.location*512: self.location*512+8], byteorder = "big")
-
+    def read(self, location, rtype):
+        if rtype == str:
+            return self.data[location*512: location*512+8].decode(encoding="ascii")
+        return int.from_bytes(bytes = self.data[location*512: location*512+8], byteorder = "big")
 
 class Page_Range:
 
@@ -70,11 +74,12 @@ class Page_Range:
         This also keeps track of how the base pages are grouped, for example.
         We'll need the number of columns and the primary key column.
         """
-        self.base_pages = [BasePage(index=0)]
+
         self.tail_pages = []
         self.index = index # identifier in table
         self.num_columns = Table.num_columns
         self.total_columns = Table.total_columns
+        self.base_pages = [BasePage(index=0, total_columns=self.total_columns, pageRangeIndex = index)]
         self.table_key = Table.key
 
 # class Column:
