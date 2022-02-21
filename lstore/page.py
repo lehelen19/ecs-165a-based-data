@@ -55,7 +55,9 @@ class Page:
         if type(value) == int:
             self.data[start:start+8] = value.to_bytes(8, byteorder="big")
         elif type(value) == str:
-            self.data[start:start+8] = bytearray(value,"ascii")
+            value = int(value)
+            print("Value", value)
+            self.data[start:start+8] = value.to_bytes(8, byteorder="big")
             print(self.data[start:start+8], "self.data[start:start+8]")
         self.num_records += 1
         return True
@@ -63,7 +65,9 @@ class Page:
 
     def read(self, location, rtype):
         if rtype == str:
-            return self.data[location*512: location*512+8].decode(encoding="ascii")
+            temp = int.from_bytes(bytes = self.data[location*512: location*512+8], byteorder = "big")
+            print(str(temp))
+            return str(temp)
         return int.from_bytes(bytes = self.data[location*512: location*512+8], byteorder = "big")
 
 class Page_Range:

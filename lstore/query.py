@@ -96,7 +96,8 @@ class Query:
     """
     # flawed
     def update(self, primary_key, *columns):
-        # list_columns = list(columns)
+        list_columns = list(columns)
+        print(list_columns)
         # if len(list_columns) != table.num_columns:
         #     return False
         # self.rid = tailRID
@@ -113,13 +114,15 @@ class Query:
 
         # need to check where ths 
         #  create schema encoding
-        schema_encoding = ''
+        schema_encoding = record.columns[3]
+        print(schema_encoding, "schema_encoding")
+        print("pre-loop")
         for i in range(len(list_columns)):
-            if list_columns != None:
-                schema_encoding += '1'
+            if record.colums[i] == None and not get_encoding(value = record.columns[3], index = i):
+                record.user_data[i] = 0
             else:
-                schema_encoding += '0'
-        print("econding after update",schema_encoding)
+                schema_encoding = set_encoding(value=encoding, index = i)
+                record.user_data[i] = list_columns[i]
         #  create new record with updated data, still need to get the RID sorted out 
         new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
         # need to figure out what is happening here

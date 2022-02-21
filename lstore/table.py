@@ -48,22 +48,19 @@ class Table:
         self.page_directory = {}
         self.index = Index(self)
         self.num_records = 0
-        self.page_ranges = [Page_Range(index=0, Table=self)]
+        self.page_ranges = [Page_Range(num_columns=num_columns, parent=key, pr_index=0)]
 
-    def rid_to_location(self, rid: int) -> dict:
-        range_index = (rid // PAGERANGE_ENTRIES)
-        index = rid % PAGERANGE_ENTRIES
-        base_index = index // PAGE_ENTRIES
-        phy_index = index % PAGE_ENTRIES
+    # def rid_to_location(self, rid):
+    #     range_index = (rid // PAGERANGE_ENTRIES)
+    #     index = rid % PAGERANGE_ENTRIES
+    #     base_index = index // PAGE_ENTRIES
+    #     phy_index = index % PAGE_ENTRIES
 
-        page_directory = {
-            'page_range': range_index,
-            'base_page': base_index,
-            'page_index': phy_index
-        }
-
-        return page_directory
-
+    #     return {
+    #         'page_range': range_index,
+    #         'base_page': base_index,
+    #         'page_index': phy_index
+    #     }
 
     def createRid(self):
         """
@@ -73,7 +70,22 @@ class Table:
         """
         rid = self.num_records
         self.num_records += 1
-        self.page_directory[rid] = self.rid_to_location(rid)
+
+        range_index = (rid // PAGERANGE_ENTRIES)
+        index = rid % PAGERANGE_ENTRIES
+        base_index = index // PAGE_ENTRIES
+        phy_index = index % PAGE_ENTRIES
+
+        if range_index > len(self.page_ranges)-1:
+            self.add_page_range()
+
+        page_directory = {
+            'page_range': range_index,
+            'base_page': base_index,
+            'page_index': phy_index
+        }
+
+        self.page_directory[rid] = page_directory
 
         return rid
 
@@ -90,15 +102,28 @@ class Table:
                             return rid
         return False
 
+    def check_tail_capacity(self, base_page):
+        tailPage = 0
+        for page in base_page.tail:
+            for i in range(page.pages[INDIRECTION_COLUMN]):
+                if page.pages[INDIRECTION_COLUMN].read[i] == 0:
+                    return {"tailPage": tailPage, "tailIndex": i}
+        tailPage += 1
+
+        pass
+
+    def check_base_capacity(self):
+        pass
+
 
     def write_record(self, rid, record):
         page_range = self.page_directory[rid].get("page_range") # page range index
         basePage = self.page_directory[rid].get("base_page")
         pageIndex = self.page_directory[rid].get("page_index")
 
-        for i in range(self.total_columns):
+        for i in range(len(record.columns)):
             value = record.columns[i]
-            print(self.page_ranges[page_range].base_pages[basePage].pages[i].write(value, pageIndex)) # <- need to check
+            print(self.page_ranges[page_range].pages[basePage].pages[i].write(value, pageIndex)) # <- need to check
         return True
 
     def read_record(self, rid): # TODO: EDIT
@@ -107,21 +132,23 @@ class Table:
         pageIndex = self.page_directory[rid].get("page_index")
         entries = []
 
+        indirectionTID = self.page_ranges[page_range].pages[basePage].pages[INDIRECTION_COLUMN].read(pageIndex)
+
+        print("pre-for")
         for i in range(self.total_columns):
-            if i == SCHEMA_ENCODING_COLUMN:
-                rec = self.page_ranges[page_range].base_pages[basePage].pages[i].read(pageIndex, str)
-            else:
-                rec = self.page_ranges[page_range].base_pages[basePage].pages[i].read(pageIndex, int)
-            entries.append(rec)
-        print(entries)
+            entry = self.page_ranges(page_range).pages[basePage].pages[i].read(pageIndex)
+            entries.append(entry)
+        print(entries,"entries")
         key = entries[4]
         schema_encode = entries[SCHEMA_ENCODING_COLUMN]
         print(schema_encode, "schema_encode")
         columns = entries[4:]
-        indTID = self.page_ranges[page_range].base_pages[basePage].pages[INDIRECTION_COLUMN].read(pageIndex)
+
+        if not schema_encode:
+            return Record(rid=rid, key=key, columns=columns, schema_encoding=schema_encode)
 
         if "1" not in schema_encode:
-            return Record(key= key, rid = rid, schema_encoding = schema_encode, column_values = columns)
+            return Record(key= key, rid = rid, user_data = columns, schema_encoding = schema_encode)
         else:
             indDict = self.page_ranges[page_range].base_pages[basePage].tailDirectory.get(indTID)
             tailPage = indDict.get("tail_page")
@@ -135,7 +162,7 @@ class Table:
             for i in updatedCols:
                 columns[i-4] = self.page_ranges[page_range].base_pages[basePage].tail[tailPage].pages[i].read(tailIndex)
 
-        return Record(rid=rid, key=key, schema_encoding=schema_encode, user_data=columns)
+        return Record(rid=rid, key=key, user_data=columns, schema_encoding=schema_encode)
 
 
     def update_record(self, rid, record):
@@ -165,7 +192,8 @@ class Table:
 
 
     def add_page_range(self, index):
-        self.page_ranges.append(Page_Range(len(self.page_ranges), self))
+        range_index =  len(self.page_ranges)
+        self.page_ranges.append(Page_Range(num_columns=self.num_columns, parent=self.key, pr_index=index))
 
     def __merge(self):
         print("merge is happening")
