@@ -91,11 +91,11 @@ class Table:
 
     def key_get_RID(self, key):
         for page_range in self.page_ranges:
-            for base_page in page_range.base_pages:
+            for base_page in page_range.pages:
                 for i in range(PAGE_ENTRIES):
-                    entry = base_page.pages[4].read(i, int)
+                    entry = base_page.pages[4].read(i)
                     if entry == key:
-                        rid = base_page.pages[RID_COLUMN].read(i, int)
+                        rid = base_page.pages[RID_COLUMN].read(i)
                         if rid == "*":
                             return False
                         else:
@@ -126,6 +126,12 @@ class Table:
             print(self.page_ranges[page_range].pages[basePage].pages[i].write(value, pageIndex)) # <- need to check
         return True
 
+    def get_encoding(value, index):
+        return value & (1 << index)
+
+    def set_encoding(value, index):
+        return value | (1 << index)
+
     def read_record(self, rid): # TODO: EDIT
         page_range = self.page_directory[rid].get("page_range")
         basePage = self.page_directory[rid].get("base_page")
@@ -136,33 +142,49 @@ class Table:
 
         print("pre-for")
         for i in range(self.total_columns):
-            entry = self.page_ranges(page_range).pages[basePage].pages[i].read(pageIndex)
+            entry = self.page_ranges[page_range].pages[basePage].pages[i].read(pageIndex)
             entries.append(entry)
         print(entries,"entries")
         key = entries[4]
         schema_encode = entries[SCHEMA_ENCODING_COLUMN]
-        print(schema_encode, "schema_encode")
+        # print(schema_encode, "schema_encode")
         columns = entries[4:]
 
+        print("schema_encode", schema_encode)
         if not schema_encode:
-            return Record(rid=rid, key=key, columns=columns, schema_encoding=schema_encode)
-
-        if "1" not in schema_encode:
-            return Record(key= key, rid = rid, user_data = columns, schema_encoding = schema_encode)
+            print("no change")
+            return Record(rid=rid, key=key, user_data = columns, schema_encoding=schema_encode)
         else:
-            indDict = self.page_ranges[page_range].base_pages[basePage].tailDirectory.get(indTID)
-            tailPage = indDict.get("tail_page")
-            tailIndex = indDict.get("page_index")
-            updatedCols = []
-
+            indLoc = self.page_ranges[page_range].pages[basePage].tailDirectory.get(indirectionTID)
+            tailPage = indLoc["tail_index"]
+            tailIndex = indLoc["page_index"]
+            colUpdates = []
             for i in range(4, self.total_columns):
-                if get_bit(schema_encode, i-4):
-                    updatedCols.append(i)
+                if Table.get_encoding(schema_encode, i - 4):
+                    colUpdates.append(i)
 
-            for i in updatedCols:
-                columns[i-4] = self.page_ranges[page_range].base_pages[basePage].tail[tailPage].pages[i].read(tailIndex)
+            for i in colUpdates:
+                # print("page_range", page_range,"basePage", basePage, "tailPage", tailPage, "i", i, "page", pageIndex)
+                columns[i - 4] = self.page_ranges[page_range].pages[basePage].tail[tailPage].pages[i].read(tailIndex)
+        return Record(rid=rid, key=key, user_data = columns, schema_encoding=schema_encode)
 
-        return Record(rid=rid, key=key, user_data=columns, schema_encoding=schema_encode)
+
+        # if "1" not in schema_encode:
+        #     return Record(key= key, rid = rid, user_data = columns, schema_encoding = schema_encode)
+        # else:
+        #     indDict = self.page_ranges[page_range].base_pages[basePage].tailDirectory.get(indTID)
+        #     tailPage = indDict.get("tail_page")
+        #     tailIndex = indDict.get("page_index")
+        #     updatedCols = []
+
+        #     for i in range(4, self.total_columns):
+        #         if get_bit(schema_encode, i-4):
+        #             updatedCols.append(i)
+
+        #     for i in updatedCols:
+        #         columns[i-4] = self.page_ranges[page_range].base_pages[basePage].tail[tailPage].pages[i].read(tailIndex)
+
+        # return Record(rid=rid, key=key, user_data=columns, schema_encoding=schema_encode)
 
 
     def update_record(self, rid, record):
@@ -171,9 +193,9 @@ class Table:
         basePage = record_info.get("base_page")
         pageIndex = record_info.get("page_index")
 
-        prevTID = self.page_ranges[pageRange].base_pages[basePage].pages[INDIRECTION_COLUMN].read(pageIndex)
-        newTID = self.page_ranges[pageRange].base_pages[basePage].createTID()
-        newTIDLocation = self.page_ranges[pageRange].base_pages[basePage].tail_page_directory.get(newTID)
+        prevTID = self.page_ranges[pageRange].pages[basePage].pages[INDIRECTION_COLUMN].read(pageIndex)
+        newTID = self.page_ranges[pageRange].pages[basePage].createTID()
+        newTIDLocation = self.page_ranges[pageRange].pages[basePage].tailDirectory.get(newTID)
 
         newTail = newTIDLocation.get("tail_index")
         newPage = newTIDLocation.get("page_index")
@@ -183,12 +205,14 @@ class Table:
 
         for i in range(len(record.columns)):
             val = record.columns[i]
-            self.page_ranges[pageRange].base_pages[basePage].tail[newTail].pages[i].write(column_values, newPage)
+            print("val", val, type(val))
+            self.page_ranges[pageRange].pages[basePage].tail[newTail].pages[i].write(val, newPage)
 
         newSchema = record.columns[SCHEMA_ENCODING_COLUMN]
-        updateInd = self.page_ranges[pageRange].base_pages[basePage].pages[INDIRECTION_COLUMN].write(newTID, newPage)
-        updateSchema = self.page_ranges[pageRange].base_pages[basePage].pages[SCHEMA_ENCODING_COLUMN].write(newSchema, newPage)
+        updateInd = self.page_ranges[pageRange].pages[basePage].pages[INDIRECTION_COLUMN].write(newTID, newPage)
+        updateSchema = self.page_ranges[pageRange].pages[basePage].pages[SCHEMA_ENCODING_COLUMN].write(newSchema, newPage)
 
+        return True
 
 
     def add_page_range(self, index):

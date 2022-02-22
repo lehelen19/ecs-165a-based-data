@@ -1,7 +1,11 @@
 from lstore.table import Table, Record
 from lstore.index import Index
 from lstore.page import Page, Page_Range, BasePage, TailPage
+# def get_encoding(value, index):
+#     return value & (1 << index)
 
+# def set_encoding(value, index):
+#     return value | (1 << index)
 
 class Query:
     """
@@ -54,9 +58,8 @@ class Query:
         if len(list_columns) != self.table.num_columns:
             return False
 
-        schema_encoding = '0' * self.table.num_columns
         self.rid = self.table.createRid()
-        new_record = Record(key = cols[0], rid = self.rid, user_data = list_columns, schema_encoding = schema_encoding)
+        new_record = Record(key = cols[0], rid = self.rid, user_data = list_columns, schema_encoding = 0)
         self.table.write_record(self.rid, new_record)
 
     """
@@ -71,23 +74,32 @@ class Query:
 
     def select(self, index_value, index_column, query_columns):
         if len(query_columns) != self.table.num_columns or index_column > self.table.num_columns or index_column < 0:
+            print("error")
             return False
         # error checking
         for value in query_columns:
-            if value !=0 or value != 1:
+            if value !=0 and value != 1:
+                print("errors")
                 return False
 
         rid = self.table.key_get_RID(index_value)
+        print("RIIIDDIDIDID", rid)
         if rid is None:
             return False
-        record_list = []
-        record = read_record(rid)
-        for index, value in enumerate(query_columns):
-            if value == 1:
-                record_list.append[record.column[index+4]]
+        record = self.table.read_record(rid)
+        print("recccccc", record)
+        if record == False:
+            return False
+        records = []
+        
+        for index in range(len(query_columns)):
+            if query_columns[index] == 1:
+                continue
             else:
-                record_list.append[None]
-        return record_list
+                record.user_data[index] = None
+        records.append(record)
+        return records
+
 
     """
     # Update a record with specified key and columns
@@ -96,8 +108,9 @@ class Query:
     """
     # flawed
     def update(self, primary_key, *columns):
-        list_columns = list(columns)
-        print(list_columns)
+        columns = columns[0]
+        # list_columns = list(columns)
+        print("lil col", columns)
         # if len(list_columns) != table.num_columns:
         #     return False
         # self.rid = tailRID
@@ -115,35 +128,19 @@ class Query:
         # need to check where ths 
         #  create schema encoding
         schema_encoding = record.columns[3]
-        print(schema_encoding, "schema_encoding")
+        # print(schema_encoding, "schema_encoding")
         print("pre-loop")
-        for i in range(len(list_columns)):
-            if record.colums[i] == None and not get_encoding(value = record.columns[3], index = i):
+        print("enc", record.columns[3], type(record.columns[3]))
+        for i in range(len(columns)):
+            if record.columns[i] == None and not self.table.get_encoding(value = record.columns[3], index = i):
                 record.user_data[i] = 0
             else:
-                schema_encoding = set_encoding(value=encoding, index = i)
-                record.user_data[i] = list_columns[i]
+                print("enc", record.columns[3], type(record.columns[3]))
+                schema_encoding = Table.set_encoding(schema_encoding, i)
+                record.user_data[i] = columns[i]
         #  create new record with updated data, still need to get the RID sorted out 
-        new_record = Record(key = columns[0], rid = tailRID, schema_encoding = schema_encoding, columns = columns)
-        # need to figure out what is happening here
-        self.tailrecords.append(new_record)
-
-        # meta data columns 
-        indirection = rid
-        Time = 0
-        all_columns = [indirection, tailRID, Time, schema_encoding]
-        for i in range(list_columns):
-            all_columns.append(i)
-        if has_capacity:
-            for i in range(len(all_columns)):
-                value = list_columns[i]
-                self.table.write_record(value)
-
-            return True
-        # need to update previous update's indirection column. 
-
-        return False
-
+        new_record = Record(key = columns[0], rid = rid, schema_encoding = schema_encoding, user_data = columns)
+        return self.table.update_record(rid, new_record)
 
     """
     :param start_range: int         # Start of the key range to aggregate
@@ -158,20 +155,24 @@ class Query:
         # read from base pages, error checking
         if start_range < 0 or end_range < 0:
             return False
-        if aggregate_column_index < 0 or aggregate_column_index > 0:
+        if aggregate_column_index < 0 or aggregate_column_index > self.table.num_columns:
             return False
 
         column_sum = 0
-        founded_key = []
-        for record in tailrecords:
-            if start_range <= record[4] <= end_range:
-                column_sum += record[aggregate_column_index+4]
-                founded_key.append(record[4])
-
-        for record in tailrecords:
-            if start_range <= record[4] <= end_range:
-                if record[4] not in founded_key:
-                    column_sum += record[aggregate_column_index+4]
+        founded_key = False
+        for pagerange in self.table.page_ranges:
+            for basepages in pagerange.pages:
+                for i in range(512):
+                    key=basepages.pages[4].read(i)
+                    if key >= start_range and key <= end_range:
+                        rid = basepages.pages[1].read(i)
+                        record = self.table.read_record(rid)
+                        user_columns = record.user_data
+                        column_sum += pages[aggregate_column_index]
+                        founded_key = True
+        
+        if not founded_key:
+            return False
 
         return column_sum
 

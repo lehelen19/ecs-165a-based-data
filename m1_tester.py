@@ -18,11 +18,11 @@ query = Query(grades_table)
 # dictionary for records to test the database: test directory
 records = {}
 
-number_of_records = 1000
+number_of_records = 10
 number_of_aggregates = 100
 seed(3562901)
 
-for i in range(0, number_of_records):
+for i in range(0, number_of_records): 
     key = 92106429 + randint(0, number_of_records)
 
     #skip duplicate keys
@@ -33,27 +33,17 @@ for i in range(0, number_of_records):
     # # runs fine up to here
 
     query.insert(*records[key])
-    print("Done Insert")
-    query.update(key,[1, 1, 1, 1, 1])
-    print("Done update")
-    query.select(key,[1, 1, 1, 1, 1])
-
-    break;
+    #print("Done Insert")
+    #query.update(key,[1, 1, 1, 1, 1])
+    #print("Done update")
+    #print("tabel", grades_table.page_ranges[0].pages[0].tail[0], grades_table.page_ranges[0].pages[0].tail[0].index, grades_table.page_ranges[0].pages[0].tail[0].parent)
+    #rec = query.select(key,4,[1, 1, 1, 1, 1])
+    #print("records", rec)
+    #for r in rec:
+    #    print("rec", r, r.rid, r.key, r.columns)
     # print('inserted', records[key])
-
-print("Insert finished")
-print(db.tables)
-print(query.table.num_columns, "HELLO")
-print(query.table.name, "name")
-print(query.table.key, "key")
-print(query.table.num_columns, "num col")
-print(query.table.total_columns, "total col")
-print(query.table.page_directory, "page directory")
-print(query.table.index, "index")
-print(query.table.num_records, "num records")
-print(query.table.page_ranges, "rage")
-# print()
-print()
+print("tabel",grades_table.num_records)
+      #grades_table.page_ranges[0].pages[0].tail[0], grades_table.page_ranges[0].pages[0].tail[0].index, grades_table.page_ranges[0].pages[0].tail[0].parent)
 
 # Check inserted records using select query
 for key in records:
