@@ -184,12 +184,11 @@ class Query:
     # Returns True is increment is successful
     # Returns False if no record matches key or if target record is locked by 2PL.
     """
-    # this is copied, need to chage. 
     def increment(self, key, column):
         r = self.select(key, self.table.key, [1]*self.table.num_columns)[0]
-        if not r:
-            return False  
-        updated_columns = [None] * self.table.num_columns
-        updated_columns[column] = r[column] + 1
-        u = self.update(key, *updated_columns)
-        return u
+        if r is not False:
+            updated_columns = [None] * self.table.num_columns
+            updated_columns[column] = r[column] + 1
+            u = self.update(key, *updated_columns)
+            return u
+        return False
