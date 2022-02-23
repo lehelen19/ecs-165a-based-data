@@ -1,11 +1,11 @@
 class BasePage:
 
     def __init__(self, num_columns, parent, index):
-        self.pages = [Page(numColumns=i) for i in range(num_columns + 4)] #eq to colmuns_list
-        self.tail = [TailPage(num_columns=num_columns, index=0, parent=index)] # eq to tail_page_list
-        self.tailDirectory = {} # eq to tail_page_directectory
-        self.range_index = parent # eq to to pr_key
-        self.index = index # index of column where 0 = indirection, etc., eq to bp key
+        self.pages = [Page(numColumns=i) for i in range(num_columns + 4)] # list of physical pages
+        self.tail = [TailPage(num_columns=num_columns, index=0, parent=index)] # list of tail pages
+        self.tailDirectory = {} # directory mapping tail page to tail index and page index
+        self.range_index = parent # index of parent page_range
+        self.index = index
         self.numTailRecords = 0
         self.numTailPages = 1
 
@@ -14,20 +14,22 @@ class BasePage:
         tailIndex = len(self.tail)
         newTail = TailPage(num_columns=num_columns, parent=self.key, index=tailIndex)
         self.tail.append(newTail)
+        return f"Created new tail page. Tail index: {tailIndex}"
 
-    def createTID(self):
+    def createTID(self, num_columns):
         TID = self.numTailRecords
         self.numTailRecords += 1
+        
         tailIndex = TID // 512
         if tailIndex > len(self.tail)-1:
-            self.newTailPage()
+            self.newTailPage(num_columns)
         self.tailDirectory[TID] = {"tail_index": tailIndex, "page_index" : TID % 512}
         return TID
 
     def TID_to_location(self, TID):
         tailIndex = TID // 512
         pageIndex = TID % 512
-        return{"tail_page": tailIndex, "page": pageIndex}
+        return{"tail_page": tailIndex, "page_index": pageIndex}
 
 class TailPage:
 
@@ -60,7 +62,7 @@ class Page:
         if location > 512:
             return False
         start = location * 8
-        self.data[start:(start + 8)] = value.to_bytes(8, "big")
+        self.data[start : (start + 8)] = value.to_bytes(8, "big")
         self.num_records += 1
         # if type(value) == int:
         #     self.data[start:start+8] = value.to_bytes(8, byteorder="big")
@@ -75,7 +77,7 @@ class Page:
 
     def read(self, location):
         start = location * 8
-        res = self.data[start:(start + 8)]
+        res = self.data[start : (start + 8)]
         ret_val = int.from_bytes(bytes=res, byteorder="big")
         return ret_val
         # if rtype == str:

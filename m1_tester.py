@@ -6,7 +6,7 @@ from random import choice, randint, sample, seed
 db = Database()
 # Create a table  with 5 columns
 #   Student Id and 4 grades
-#elf   The first argument is name of the table
+#   The first argument is name of the table
 #   The second argument is the number of columns
 #   The third argument is determining the which columns will be primay key
 #       Here the first column would be student id and primary key
@@ -18,11 +18,11 @@ query = Query(grades_table)
 # dictionary for records to test the database: test directory
 records = {}
 
-number_of_records = 10
+number_of_records = 1000
 number_of_aggregates = 100
 seed(3562901)
 
-for i in range(0, number_of_records): 
+for i in range(0, number_of_records):
     key = 92106429 + randint(0, number_of_records)
 
     #skip duplicate keys
@@ -30,20 +30,9 @@ for i in range(0, number_of_records):
         key = 92106429 + randint(0, number_of_records)
 
     records[key] = [key, randint(0, 20), randint(0, 20), randint(0, 20), randint(0, 20)]
-    # # runs fine up to here
-
     query.insert(*records[key])
-    #print("Done Insert")
-    #query.update(key,[1, 1, 1, 1, 1])
-    #print("Done update")
-    #print("tabel", grades_table.page_ranges[0].pages[0].tail[0], grades_table.page_ranges[0].pages[0].tail[0].index, grades_table.page_ranges[0].pages[0].tail[0].parent)
-    #rec = query.select(key,4,[1, 1, 1, 1, 1])
-    #print("records", rec)
-    #for r in rec:
-    #    print("rec", r, r.rid, r.key, r.columns)
     # print('inserted', records[key])
-print("tabel",grades_table.num_records)
-      #grades_table.page_ranges[0].pages[0].tail[0], grades_table.page_ranges[0].pages[0].tail[0].index, grades_table.page_ranges[0].pages[0].tail[0].parent)
+print("Insert finished")
 
 # Check inserted records using select query
 for key in records:

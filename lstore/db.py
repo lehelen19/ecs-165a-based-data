@@ -28,6 +28,7 @@ class Database():
     """
     def drop_table(self, name):
         self.tables[name] = None
+        return f"Table {name} has been dropped."
 
 
     """

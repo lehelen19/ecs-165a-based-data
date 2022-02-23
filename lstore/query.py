@@ -1,11 +1,12 @@
 from lstore.table import Table, Record
 from lstore.index import Index
 from lstore.page import Page, Page_Range, BasePage, TailPage
-# def get_encoding(value, index):
-#     return value & (1 << index)
 
-# def set_encoding(value, index):
-#     return value | (1 << index)
+def get_encoding(value, index):
+    return value & (1 << index)
+
+def set_encoding(value, index):
+    return value | (1 << index)
 
 class Query:
     """
@@ -17,7 +18,7 @@ class Query:
 
     def __init__(self, table):
         self.table = table
-        self.tailRID = 64001
+
     """
     # internal Method
     # Read a record with specified RID
@@ -26,24 +27,47 @@ class Query:
     """
 
     def delete(self, primary_key):
-        rid = table.key_get_RID(primary_key)
-        if rid is None:
-            return False
+        real_rid = self.table.key_get_RID(primary_key)
         record = self.table.read_record(rid)
-        print(record)
-        if record.column[0] == record.rid:
-            record.columns[1] = '*'
-        elif (record.columns[1] != record.columns[0]): #if there are any updates check
-            tail_record = self.table.read_record(record.columns[0])
-            while tail_record.columns[1] != tail_record.columns[0]:
-                tail_record.columns[1] = '*'
-                tail_record = self.table.read_record(tail_record.columns[0])
-            tail_record.columns[1] = '*'
+        for pagerange in self.table.page_ranges:
+            for basepages in pagerange.pages:
+                for i in range(512):
+                    rid = basepages.pages[1].read(i)
+                    if rid == real_rid:
+                        self.write("*", basepages.pages[1])
+                        indirection = basepages.pages[0].read(i)
+                        if indirection != 0:
+                            real_rid = indirection
+                            continue
+
+                        else:
+                            return True
+        # rid = self.table.key_get_RID(primary_key)
+        # if rid is None:
+        #     return False
+        # record = self.table.read_record(rid)
+        # print(record)
+        # if record.column[0] == record.rid:
+        #     record.columns[1] = '*'
+        # elif (record.columns[1] != record.columns[0]): #if there are any updates check
+        #     tail_record = self.table.read_record(record.columns[0])
+        #     while tail_record.columns[1] != tail_record.columns[0]:
+        #         tail_record.columns[1] = '*'
+        #         tail_record = self.table.read_record(tail_record.columns[0])
+        #     tail_record.columns[1] = '*'
+        # return True
+
+
+
+    def check_values(self, values):
+        for val in values:
+            if val < 0:
+                return False
+            elif not isinstance(val, int):
+                return False
+            elif val == None:
+                return False
         return True
-
-
-
-
 
 
     """
@@ -53,14 +77,17 @@ class Query:
     """
 
     def insert(self, *cols):
+        print("Insert starting!")
         list_columns = list(cols)
         
         if len(list_columns) != self.table.num_columns:
+            print("FCan't write!!")
             return False
 
-        self.rid = self.table.createRid()
-        new_record = Record(key = cols[0], rid = self.rid, user_data = list_columns, schema_encoding = 0)
-        self.table.write_record(self.rid, new_record)
+        new_rid = self.table.createRid()
+        new_record = Record(key = cols[0], rid = new_rid, user_data = list_columns, schema_encoding = 0)
+        wrote = self.table.write_record(rid=new_rid, record=new_record)
+        print("Did I write?", wrote)
 
     """
     # Read a record with specified key
@@ -73,25 +100,29 @@ class Query:
     """
 
     def select(self, index_value, index_column, query_columns):
-        if len(query_columns) != self.table.num_columns or index_column > self.table.num_columns or index_column < 0:
-            print("error")
+        if (len(query_columns) != self.table.num_columns) or (index_column > self.table.num_columns) or (index_column < 0):
+            #print("Out of bounds or not the same number of columns")
             return False
         # error checking
         for value in query_columns:
             if value !=0 and value != 1:
-                print("errors")
+                #print("Incorrect value")
                 return False
-
+        #print(f"Selecting index: {index_value}, column: {index_column}, query_columns: {query_columns}")
         rid = self.table.key_get_RID(index_value)
-        print("RIIIDDIDIDID", rid)
+        #print("Rid:", rid)
+
         if rid is None:
+            #print("Rid is none")
             return False
-        record = self.table.read_record(rid)
-        print("recccccc", record)
-        if record == False:
-            return False
-        records = []
         
+        record = self.table.read_record(rid)
+        #print("record:", record)
+        if record is None:
+            #print("Record is none!")
+            return False
+
+        records = []
         for index in range(len(query_columns)):
             if query_columns[index] == 1:
                 continue
@@ -108,39 +139,37 @@ class Query:
     """
     # flawed
     def update(self, primary_key, *columns):
-        columns = columns[0]
-        # list_columns = list(columns)
-        print("lil col", columns)
-        # if len(list_columns) != table.num_columns:
-        #     return False
-        # self.rid = tailRID
+        #print("Start of query update")
+        list_columns = list(columns)
+        if (len(list_columns) != self.table.num_columns) or (list_columns[0] is not None):
+            #print("Out of bounds")
+            return False
 
-        # rid = key_get_RID(columns(0))
         rid = self.table.key_get_RID(primary_key) # base rid
-        print("rid", rid)
+        if rid is None:
+            #print("Rid is none")
+            return False
+        
         record = self.table.read_record(rid)
-        print("record",record)
-
-        # self.table.update_record(rid, record)
-
-        # record.columns[0] = tailRID # need to set a new rid 
-
-        # need to check where ths 
-        #  create schema encoding
+        print(f"Read record {record.columns}")
         schema_encoding = record.columns[3]
-        # print(schema_encoding, "schema_encoding")
-        print("pre-loop")
-        print("enc", record.columns[3], type(record.columns[3]))
+        user_data = record.user_data
+        #record.user_data
+        #print("Preloop")
         for i in range(len(columns)):
-            if record.columns[i] == None and not self.table.get_encoding(value = record.columns[3], index = i):
-                record.user_data[i] = 0
+            if columns[i] == None:
+                if not get_encoding(value = schema_encoding, index = i):
+                    user_data[i] = 0
+                else:
+                    continue
             else:
-                print("enc", record.columns[3], type(record.columns[3]))
-                schema_encoding = Table.set_encoding(schema_encoding, i)
-                record.user_data[i] = columns[i]
-        #  create new record with updated data, still need to get the RID sorted out 
-        new_record = Record(key = columns[0], rid = rid, schema_encoding = schema_encoding, user_data = columns)
-        return self.table.update_record(rid, new_record)
+                schema_encoding = set_encoding(schema_encoding, i)
+                user_data[i] = columns[i]
+                #print("current data",user_data[i])
+        #  create new record with updated data, still need to get the RID sorted out
+        new_record = Record(key = primary_key, rid = rid, schema_encoding = schema_encoding, user_data = user_data)
+        #print(f"{new_record.user_data}")
+        return self.table.update_record(rid=rid, record=new_record)
 
     """
     :param start_range: int         # Start of the key range to aggregate
@@ -153,9 +182,7 @@ class Query:
 
     def sum(self, start_range, end_range, aggregate_column_index):
         # read from base pages, error checking
-        if start_range < 0 or end_range < 0:
-            return False
-        if aggregate_column_index < 0 or aggregate_column_index > self.table.num_columns:
+        if start_range < 0 or end_range < 0 or aggregate_column_index < 0 or aggregate_column_index > self.table.num_columns:
             return False
 
         column_sum = 0
@@ -163,12 +190,12 @@ class Query:
         for pagerange in self.table.page_ranges:
             for basepages in pagerange.pages:
                 for i in range(512):
-                    key=basepages.pages[4].read(i)
+                    key = basepages.pages[4].read(i)
                     if key >= start_range and key <= end_range:
                         rid = basepages.pages[1].read(i)
                         record = self.table.read_record(rid)
                         user_columns = record.user_data
-                        column_sum += pages[aggregate_column_index]
+                        column_sum += user_columns[aggregate_column_index]
                         founded_key = True
         
         if not founded_key:
