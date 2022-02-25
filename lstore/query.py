@@ -39,7 +39,6 @@ class Query:
                         if indirection != 0:
                             real_rid = indirection
                             continue
-
                         else:
                             return True
         # rid = self.table.key_get_RID(primary_key)

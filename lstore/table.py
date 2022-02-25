@@ -1,7 +1,7 @@
 from lstore.index import Index
 from lstore.index import Index
 from datetime import datetime
-from lstore.page import Page_Range
+from lstore.page import Page_Range, Page, write_to_disk
 
 PAGE_ENTRIES = 512
 PAGERANGE_ENTRIES = 512*16
@@ -9,7 +9,7 @@ PAGERANGE_ENTRIES = 512*16
 INDIRECTION_COLUMN = 0 # int
 RID_COLUMN = 1 # int
 TIMESTAMP_COLUMN = 2 # int
-SCHEMA_ENCODING_COLUMN = 3 # string
+SCHEMA_ENCODING_COLUMN = 3 # int
 
 # passed in key value -> search for RID
 # afer we get RID we need the record that has the RID
@@ -23,6 +23,162 @@ def get_encoding(value, index):
 def set_encoding(value, index):
     return value | (1 << index)
 
+class Frame:
+    """
+    The collection of pages used for managing the main memory.
+    Main memory pages in buffer pool are called frames: "slots" to hold a page.
+    """
+    def __init__(self, page_path, table_name):
+        self.columns = [] # Depends on number of columns of given page
+        self.page_path = page_path
+        self.table_name = table_name
+        self.is_dirty = False
+        self.pin = False # Is the current page pinned?
+        self.pin_count = 0 # Number of times page currently in given frame has been requested but not released
+        self.bufferpool_time = 0 # Time of page in the bufferpool
+        self.tuple_key = None
+    
+    def set_dirty(self):
+        self.is_dirty = True
+        return True
+    
+    def set_clean(self):
+        self.is_dirty = False
+        return True
+    
+    def pin(self):
+        self.pin = True
+        return True
+    
+    def unpin(self):
+        self.pin = False
+        return True
+
+class Bufferpool:
+    """
+    The software layer responsible for bringing pages from disk to main memory.
+    Assume we have a fixed constant number of pages (100) in the bufferpool.
+    """
+    def __init__(self, root_path):
+        self.root_path = root_path
+        self.frames = []
+        self.frame_count = 0
+        self.frame_directory = {} # (table_name, page_range, base/tail_index, is_base_record) : frame_index
+        self.num_frames = 0
+        self.merge_buffer = False
+    
+    def add_frame(self, table_name, page_range, index, is_base_record, frame_index):
+        new_frame_key = (table_name, page_range, index, is_base_record)
+        self.frame_directory[new_frame_key] = frame_index
+        self.frames[frame_index].tuple_key = new_frame_key
+
+        if self.frame_count < 100 or self.merge_buffer:
+            self.frame_count += 1
+    
+    def at_capacity(self):
+        if self.frame_count == 100:
+            return True
+        return False
+    
+    def record_present(self, table_name, record_data):
+        """
+        Check if the record is present in the bufferpool.
+        """
+        is_base_record = record_data.get("is_base_record")
+        page_range = record_data.get("page_range")
+
+        if record_data.get("is_base_record"):
+            index = record_data.get("base_page")
+        else:
+            index = record_data.get("tail_page")
+        
+        frame_tuple_key = (table_name, page_range, index, is_base_record)
+
+        if frame_tuple_key in self.frame_directory:
+            return True
+        return False
+    
+    def get_frame(self, table_name, record_data):
+        is_base_record = record_data.get("is_base_record")
+        page_range = record_data.get("page_range")
+
+        if is_base_record:
+            index = record_data.get("base_page")
+        else:
+            index = record_data.get("tail_page")
+        
+        frame_data = (table_name, page_range, index, is_base_record)
+        return self.frame_directory.get(frame_data)
+    
+    def evict_page(self):
+        """
+        Evict the least recently used page in the bufferpool.
+        If the page is dirty, then write it to the disk before eviction.
+        """
+        last_used_page = self.frames[0]
+        frame_index = 0
+
+        for index, frame in enumerate(self.frames):
+            if frame.bufferpool_time < last_used_page.bufferpool_time:
+                last_used_page = frame
+                frame_index = index
+        
+        if last_used_page.is_dirty:
+            write_path = last_used_page.page_path
+            columns = last_used_page.columns
+            write_to_disk(write_path, columns)
+        
+        frame_key = last_used_page.tuple_key
+        del self.frame_directory[frame_key]
+
+        return frame_index
+    
+    def load_page(self, table_name, num_columns, pr_index, index, is_base_record):
+        if is_base_record:
+            page_path = f"{self.path_to_root}/{table_name}/page_range_{pr_index}/" \
+                        f"base_page_{index}.bin"
+        else:
+            page_path = f"{self.path_to_root}/{table_name}/page_range_{pr_index}/" \
+                        f"tail_pages/tail_page_{index}.bin"
+        
+        if self.at_capacity() and not self.merge_buffer:
+            frame_index = self.evict_page()
+            self.frames[frame_index] = Frame(page_path=page_path, table_name=table_name)
+        else:
+            frame_index = self.frame_count
+            self.frames.append(Frame(page_path=page_path, table_name=table_name))
+
+        self.frames[frame_index].pin_frame()
+        self.frames[frame_index].bufferpool_time = datetime.now()
+        self.frames[frame_index].columns = [Page(numColumns=i) for i in range(num_columns + 5)]
+
+        # Read from disk
+        for i in range(num_columns + 5):
+            self.frames[frame_index].columns[i].read_from_disk(page_path=page_path, column=i)
+        
+        self.add_frame(table_name, pr_index, index, is_base_record, frame_index)
+        return frame_index
+
+    def reload_page(self, frame_index, num_columns):
+        frame = self.frames[frame_index]
+        page_path = frame.page_path
+        for i in range(num_columns + 5):
+            frame.columns[i].read_from_disk(page_path=page_path, column=i)
+    
+    def commit_page(self, frame_index):
+        frame = self.frames[frame_index]
+        columns = frame.columns
+        page_path = frame.page_path
+        if frame.is_dirty:
+            write_to_disk(page_path, columns)
+            return True
+        return False
+    
+    def commit_all(self):
+        for i in range(len(self.frames)):
+            if self.frames[i].is_dirty:
+                self.commit_page(frame_index=i)
+
 class Record:
 
     def __init__(self, rid, key, user_data, schema_encoding):
@@ -30,7 +186,7 @@ class Record:
         self.key = key
         timestamp = int(datetime.now().strftime("%d%m%Y%H%M%S"))
         self.user_data = user_data
-        self.meta_data = [rid, rid, timestamp, schema_encoding]
+        self.meta_data = [rid, key, timestamp, schema_encoding]
         self.columns = self.meta_data + self.user_data
 
 class Table:
@@ -45,8 +201,7 @@ class Table:
     :param num_records: int     #Number of records in table
     :param page_ranges: list    #List of page ranges associated with table (initialized)
     """
-
-    def __init__(self, name, num_columns, key):
+    def _init_(self, name, key, num_columns, bufferpool, path)
         self.name = name
         self.key = key
         self.num_columns = num_columns
@@ -55,9 +210,10 @@ class Table:
         self.index = Index(self)
         self.num_records = 0
         self.page_ranges = [Page_Range(num_columns=num_columns, parent=key, pr_index=0)]
+        self.bufferpool = bufferpool
+        self.path = path 
 
     # def rid_to_location(self, rid):
-    #     range_index = (rid // PAGERANGE_ENTRIES)
     #     index = rid % PAGERANGE_ENTRIES
     #     base_index = index // PAGE_ENTRIES
     #     phy_index = index % PAGE_ENTRIES

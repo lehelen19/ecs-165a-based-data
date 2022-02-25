@@ -85,6 +85,18 @@ class Page:
         #     print(str(temp))
         #     return str(temp)
         # return int.from_bytes(bytes = self.data[location*512: location*512+8], byteorder = "big")
+    
+    def read_from_disk(self, page_path, column):
+        _file = open(page_path, "rb").seek(column * 4096)
+        self.data = bytearray(_file.read(4096))
+        _file.close()
+        return True
+
+def write_to_disk(page_path, columns):
+    _file = open(page_path, "wb")
+    for i in range(len(columns)):
+        _file.write(columns[i].data)
+    _file.close()
 
 class Page_Range:
 
